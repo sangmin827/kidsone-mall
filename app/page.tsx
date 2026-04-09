@@ -1,65 +1,142 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+const categories = [
+  { name: "신상품", href: "#" },
+  { name: "베스트", href: "#" },
+  { name: "아우터", href: "#" },
+  { name: "상의", href: "#" },
+  { name: "하의", href: "#" },
+  { name: "액세서리", href: "#" },
+];
+
+const products = [
+  {
+    id: 1,
+    name: "베이직 반팔 티셔츠",
+    price: "19,900원",
+    image: "https://via.placeholder.com/400x400?text=Product+1",
+  },
+  {
+    id: 2,
+    name: "오버핏 후드집업",
+    price: "49,900원",
+    image: "https://via.placeholder.com/400x400?text=Product+2",
+  },
+  {
+    id: 3,
+    name: "데님 팬츠",
+    price: "39,900원",
+    image: "https://via.placeholder.com/400x400?text=Product+3",
+  },
+  {
+    id: 4,
+    name: "미니 크로스백",
+    price: "29,900원",
+    image: "https://via.placeholder.com/400x400?text=Product+4",
+  },
+];
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen bg-gray-50">
+      {/* 메인 배너 */}
+      <section className="bg-gray-900 text-white">
+        <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
+          <div className="max-w-2xl space-y-6">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-300">
+              New Collection
+            </p>
+            <h1 className="text-4xl font-bold leading-tight md:text-6xl">
+              감각적인 스타일을 위한
+              <br />
+              새로운 쇼핑 경험
+            </h1>
+            <p className="text-base text-gray-300 md:text-lg">
+              트렌디한 아이템과 깔끔한 쇼핑 환경을 한 곳에서 만나보세요.
+            </p>
+            <div className="flex gap-4">
+              <Link
+                href="#products"
+                className="rounded-lg bg-white px-6 py-3 font-semibold text-black transition hover:bg-gray-200"
+              >
+                상품 보러가기
+              </Link>
+              <Link
+                href="#categories"
+                className="rounded-lg border border-white px-6 py-3 font-semibold text-white transition hover:bg-white hover:text-black"
+              >
+                카테고리 보기
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 카테고리 */}
+      <section id="categories" className="mx-auto max-w-7xl px-6 py-16">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold">카테고리</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            원하는 상품군을 빠르게 찾아보세요.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+          {categories.map((category) => (
+            <Link
+              key={category.name}
+              href={category.href}
+              className="rounded-2xl border border-gray-200 bg-white px-4 py-8 text-center font-medium shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+            >
+              {category.name}
+            </Link>
+          ))}
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* 추천 상품 */}
+      <section id="products" className="mx-auto max-w-7xl px-6 pb-20">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold">추천 상품</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            지금 가장 많이 찾는 인기 상품입니다.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {products.map((product) => (
+            <article
+              key={product.id}
+              className="overflow-hidden rounded-2xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="aspect-square overflow-hidden bg-gray-100">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+
+              <div className="space-y-2 p-4">
+                <h3 className="text-lg font-semibold">{product.name}</h3>
+                <p className="text-sm text-gray-500">깔끔한 데일리 스타일</p>
+                <p className="text-base font-bold">{product.price}</p>
+
+                <button className="mt-2 w-full rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition hover:bg-gray-800">
+                  장바구니 담기
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* 푸터 */}
+      <footer className="border-t border-gray-200 bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-8 text-sm text-gray-500">
+          <p>© 2026 My Shop. All rights reserved.</p>
+        </div>
+      </footer>
+    </main>
   );
 }
