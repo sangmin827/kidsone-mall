@@ -35,9 +35,9 @@ export default function RootLayout({
               <Link href="#" className="nav-actions">
                 로그인
               </Link>
-              <Link href="#" className="nav-actions">
+              {/* <Link href="#" className="nav-actions">
                 장바구니
-              </Link>
+              </Link> */}
             </div>
           </div>
         </header>
