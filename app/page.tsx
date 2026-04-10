@@ -1,40 +1,12 @@
 import Link from "next/link";
 
-const products = [
-  {
-    id: 1,
-    name: "베이직 반팔 티셔츠",
-    price: "19,900원",
-    image: "https://via.placeholder.com/400x400?text=Product+1",
-  },
-  {
-    id: 2,
-    name: "오버핏 후드집업",
-    price: "49,900원",
-    image: "https://via.placeholder.com/400x400?text=Product+2",
-  },
-  {
-    id: 3,
-    name: "데님 팬츠",
-    price: "39,900원",
-    image: "https://via.placeholder.com/400x400?text=Product+3",
-  },
-  {
-    id: 4,
-    name: "미니 크로스백",
-    price: "29,900원",
-    image: "https://via.placeholder.com/400x400?text=Product+4",
-  },
-];
-
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* 메인 배너 */}
-      <section className="bg-gray-300 text-white">
+      <section className="bg-blue-300 text-white">
         <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
           <div className="max-w-2xl space-y-6">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-300">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gray-700">
               New Collection
             </p>
             <h1 className="text-4xl font-bold leading-tight md:text-6xl font-gmarket">
@@ -42,21 +14,13 @@ export default function HomePage() {
               <br />
               항상 새로운 놀이도구!
             </h1>
-            <p className="text-base text-gray-300 md:text-lg">
-              트렌디한 아이템과 깔끔한 쇼핑 환경을 한 곳에서 만나보세요.
-            </p>
+            <p className="text-gray-700 md:text-lg">홍보하는 공간!</p>
             <div className="flex gap-4">
               <Link
-                href="#products"
+                href="/products"
                 className="rounded-lg bg-white px-6 py-3 font-semibold text-black transition hover:bg-gray-200"
               >
                 상품 보러가기
-              </Link>
-              <Link
-                href="#categories"
-                className="rounded-lg border border-white px-6 py-3 font-semibold text-white transition hover:bg-white hover:text-black"
-              >
-                카테고리 보기
               </Link>
             </div>
           </div>
