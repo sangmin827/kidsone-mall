@@ -1,11 +1,11 @@
-import Link from "next/link";
-import Image from "next/image";
-import { createClient } from "@/src/lib/supabase/server";
+import Link from 'next/link';
+import Image from 'next/image';
+import { createClient } from '@/src/lib/supabase/server';
 
 export default async function ProductsPage() {
   const supabase = await createClient();
   const { data: products, error } = await supabase
-    .from("products")
+    .from('products')
     .select(
       `
       id,
@@ -20,8 +20,8 @@ export default async function ProductsPage() {
       )
     `,
     )
-    .eq("is_active", true)
-    .order("id", { ascending: false });
+    .eq('is_active', true)
+    .order('id', { ascending: false });
 
   if (error) {
     return (
@@ -36,13 +36,13 @@ export default async function ProductsPage() {
       <section className="mx-auto max-w-7xl px-6 py-12">
         <h1 className="text-3xl font-bold font-gmarket">상품목록</h1>
 
-        <div className="mt-8 grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {products?.map((product) => {
             const thumbnail =
               product.product_images?.find((img) => img.is_thumbnail)
                 ?.image_url ??
               product.product_images?.[0]?.image_url ??
-              "/placeholder.png";
+              '/placeholder.png';
 
             return (
               <Link
@@ -50,7 +50,6 @@ export default async function ProductsPage() {
                 href={`/products/${product.slug}`}
                 className="group block overflow-hidden rounded-2xl bg-white transition hover:shadow-md"
               >
-                {/* 이미지 */}
                 <div className="relative h-48 overflow-hidden bg-gray-100">
                   <Image
                     src={thumbnail}
@@ -61,7 +60,6 @@ export default async function ProductsPage() {
                   />
                 </div>
 
-                {/* 텍스트 */}
                 <div className="space-y-1 px-3 py-3">
                   <h2 className="line-clamp-1 text-sm font-medium text-gray-900">
                     {product.name}

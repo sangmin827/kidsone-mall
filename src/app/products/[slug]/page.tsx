@@ -1,7 +1,8 @@
-import Image from "next/image";
-import { notFound } from "next/navigation";
-import { createClient } from "@/src/lib/supabase/server";
-import { addToCartAction } from "./actions";
+import Image from 'next/image';
+import { notFound } from 'next/navigation';
+import { createClient } from '@/src/lib/supabase/server';
+import ProductPurchaseBox from '@/src/components/product/ProductPurchaseBox';
+import { getMyCart } from '@/src/server/cart';
 
 type ProductImage = {
   image_url: string;
@@ -16,6 +17,7 @@ type Product = {
   price: number;
   short_description: string | null;
   description: string | null;
+  stock: number | null;
   product_images: ProductImage[] | null;
 };
 
@@ -23,7 +25,7 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from("products")
+    .from('products')
     .select(
       `
       id,
@@ -32,22 +34,23 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
       price,
       short_description,
       description,
+      stock,
       product_images (
         image_url,
         is_thumbnail,
         sort_order
       )
-    `,
+      `,
     )
-    .eq("slug", slug)
-    .eq("is_active", true)
+    .eq('slug', slug)
+    .eq('is_active', true)
     .single();
 
   if (error || !data) {
     return null;
   }
 
-  return data;
+  return data as Product;
 }
 
 export default async function ProductDetailPage({
@@ -56,47 +59,56 @@ export default async function ProductDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+
+  const [product, cartResult] = await Promise.all([
+    getProductBySlug(slug),
+    getMyCart(),
+  ]);
 
   if (!product) {
     notFound();
   }
 
-  const sortedImages =
-    product.product_images?.sort((a, b) => {
-      const aOrder = a.sort_order ?? 9999;
-      const bOrder = b.sort_order ?? 9999;
-      return aOrder - bOrder;
-    }) ?? [];
+  const cartItemCount = cartResult.items.length;
 
-  const mainImage = sortedImages[0]?.image_url ?? "/placeholder.png";
+  const images =
+    product.product_images?.sort(
+      (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999),
+    ) ?? [];
+
+  const mainImage =
+    images.find((img) => img.is_thumbnail)?.image_url ??
+    images[0]?.image_url ??
+    '/placeholder.png';
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-12">
-      <div className="grid gap-10 lg:grid-cols-2">
-        <div className="space-y-4">
-          <div className="relative aspect-square overflow-hidden rounded-2xl bg-gray-100">
+    <main className="min-h-screen bg-white">
+      <section className="mx-auto grid max-w-7xl gap-10 px-6 py-12 lg:grid-cols-2">
+        <div>
+          <div className="overflow-hidden rounded-2xl bg-gray-100">
             <Image
               src={mainImage}
               alt={product.name}
-              fill
-              className="object-cover"
+              width={800}
+              height={800}
+              className="h-auto w-full object-cover"
               priority
             />
           </div>
 
-          {sortedImages.length > 1 && (
-            <div className="grid grid-cols-4 gap-3">
-              {sortedImages.map((image, index) => (
+          {images.length > 1 && (
+            <div className="mt-4 grid grid-cols-4 gap-3">
+              {images.map((img, index) => (
                 <div
-                  key={`${image.image_url}-${index}`}
-                  className="relative aspect-square overflow-hidden rounded-xl bg-gray-100"
+                  key={`${img.image_url}-${index}`}
+                  className="overflow-hidden rounded-xl bg-gray-100"
                 >
                   <Image
-                    src={image.image_url}
+                    src={img.image_url}
                     alt={`${product.name} ${index + 1}`}
-                    fill
-                    className="object-cover"
+                    width={200}
+                    height={200}
+                    className="h-24 w-full object-cover"
                   />
                 </div>
               ))}
@@ -105,32 +117,41 @@ export default async function ProductDetailPage({
         </div>
 
         <div className="space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold">{product.name}</h1>
-            <p className="text-2xl font-extrabold">
+          <div className="space-y-3">
+            <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+
+            {product.short_description && (
+              <p className="text-base text-gray-600">
+                {product.short_description}
+              </p>
+            )}
+
+            <p className="text-2xl font-bold text-gray-900">
               {product.price.toLocaleString()}원
             </p>
-          </div>
 
-          {product.short_description && (
-            <p className="text-gray-600">{product.short_description}</p>
-          )}
-
-          <div className="rounded-2xl border border-gray-200 p-5">
-            <h2 className="mb-3 text-lg font-semibold">상품 설명</h2>
-            <p className="whitespace-pre-line text-gray-700">
-              {product.description ?? "상품 설명이 아직 등록되지 않았습니다."}
+            <p className="text-sm text-gray-500">
+              재고: {product.stock ?? 0}개
             </p>
           </div>
 
-          <form action={addToCartAction}>
-            <input type="hidden" name="productId" value={product.id} />
-            <button className="w-full rounded-2xl bg-black px-6 py-4 text-white transition hover:opacity-90">
-              장바구니 담기
-            </button>
-          </form>
+          <ProductPurchaseBox
+            productId={product.id}
+            price={product.price}
+            stock={product.stock ?? 0}
+            cartItemCount={cartItemCount}
+          />
+
+          {product.description && (
+            <div className="rounded-2xl border border-gray-200 p-5">
+              <h2 className="mb-3 text-lg font-semibold">상품 설명</h2>
+              <p className="whitespace-pre-line text-sm leading-7 text-gray-700">
+                {product.description}
+              </p>
+            </div>
+          )}
         </div>
-      </div>
+      </section>
     </main>
   );
 }

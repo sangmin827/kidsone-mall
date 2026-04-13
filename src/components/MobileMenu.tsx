@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { ROUTES } from "@/src/constants/routes";
+import { useState } from 'react';
+import Link from 'next/link';
+import { ROUTES } from '@/src/constants/routes';
 
 type Category = {
   id: number;
@@ -45,7 +45,7 @@ export default function MobileMenu({
 
       <aside
         className={`fixed right-0 top-0 z-50 h-full w-72 bg-white shadow-xl transition-transform duration-300 md:hidden ${
-          open ? "translate-x-0" : "translate-x-full"
+          open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="flex h-full flex-col">
@@ -68,7 +68,7 @@ export default function MobileMenu({
                 {isLoggedIn ? (
                   <>
                     <Link
-                      href="/cart"
+                      href="/mypage/cart"
                       onClick={() => setOpen(false)}
                       className="text-gray-800"
                     >

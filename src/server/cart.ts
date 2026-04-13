@@ -1,6 +1,6 @@
-import { createClient } from "@/src/lib/supabase/server";
-import { revalidatePath } from "next/cache";
-import { getOrCreateProfile } from "@/src/server/profile";
+import { createClient } from '@/src/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
+import { getOrCreateProfile } from '@/src/server/profile';
 
 type CartItemRow = {
   id: number;
@@ -38,9 +38,9 @@ export async function getMyCart() {
 
   // 1) 내 cart 찾기
   const { data: cart, error: cartError } = await supabase
-    .from("carts")
-    .select("id, user_id, created_at, updated_at")
-    .eq("user_id", user.id)
+    .from('carts')
+    .select('id, user_id, created_at, updated_at')
+    .eq('user_id', user.id)
     .maybeSingle();
 
   if (cartError) {
@@ -54,7 +54,7 @@ export async function getMyCart() {
 
   // 2) cart_items + products + product_images 조회
   const { data: items, error: itemsError } = await supabase
-    .from("cart_items")
+    .from('cart_items')
     .select(
       `
       id,
@@ -75,7 +75,7 @@ export async function getMyCart() {
       )
     `,
     )
-    .eq("cart_id", cart.id)
+    .eq('cart_id', cart.id)
     .returns<CartItemRow[]>();
 
   if (itemsError) {
@@ -92,9 +92,9 @@ export async function getOrCreateCart(userId: string) {
   const supabase = await createClient();
 
   const { data: existingCart, error: findError } = await supabase
-    .from("carts")
-    .select("id, user_id")
-    .eq("user_id", userId)
+    .from('carts')
+    .select('id, user_id')
+    .eq('user_id', userId)
     .maybeSingle();
 
   if (findError) {
@@ -106,9 +106,9 @@ export async function getOrCreateCart(userId: string) {
   }
 
   const { data: newCart, error: insertError } = await supabase
-    .from("carts")
+    .from('carts')
     .insert({ user_id: userId })
-    .select("id, user_id")
+    .select('id, user_id')
     .single();
 
   if (insertError) {
@@ -127,41 +127,41 @@ export async function addToCart(productId: number, quantity: number = 1) {
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    throw new Error("로그인이 필요합니다.");
+    throw new Error('로그인이 필요합니다.');
   }
 
   if (quantity < 1) {
-    throw new Error("수량은 1개 이상이어야 합니다.");
+    throw new Error('수량은 1개 이상이어야 합니다.');
   }
   await getOrCreateProfile(user);
 
   // 상품 존재 및 재고 확인
   const { data: product, error: productError } = await supabase
-    .from("products")
-    .select("id, stock, is_active")
-    .eq("id", productId)
+    .from('products')
+    .select('id, stock, is_active')
+    .eq('id', productId)
     .single();
 
   if (productError || !product) {
-    throw new Error("상품을 찾을 수 없습니다.");
+    throw new Error('상품을 찾을 수 없습니다.');
   }
 
   if (!product.is_active) {
-    throw new Error("판매 중인 상품이 아닙니다.");
+    throw new Error('판매 중인 상품이 아닙니다.');
   }
 
   if (product.stock < quantity) {
-    throw new Error("재고가 부족합니다.");
+    throw new Error('재고가 부족합니다.');
   }
 
   const cart = await getOrCreateCart(user.id);
 
   // 이미 담긴 상품인지 확인
   const { data: existingItem, error: existingError } = await supabase
-    .from("cart_items")
-    .select("id, quantity")
-    .eq("cart_id", cart.id)
-    .eq("product_id", productId)
+    .from('cart_items')
+    .select('id, quantity')
+    .eq('cart_id', cart.id)
+    .eq('product_id', productId)
     .maybeSingle();
 
   if (existingError) {
@@ -172,19 +172,19 @@ export async function addToCart(productId: number, quantity: number = 1) {
     const nextQuantity = existingItem.quantity + quantity;
 
     if (product.stock < nextQuantity) {
-      throw new Error("재고보다 많이 담을 수 없습니다.");
+      throw new Error('재고보다 많이 담을 수 없습니다.');
     }
 
     const { error: updateError } = await supabase
-      .from("cart_items")
+      .from('cart_items')
       .update({ quantity: nextQuantity, updated_at: new Date().toISOString() })
-      .eq("id", existingItem.id);
+      .eq('id', existingItem.id);
 
     if (updateError) {
       throw new Error(`장바구니 수량 업데이트 실패: ${updateError.message}`);
     }
   } else {
-    const { error: insertError } = await supabase.from("cart_items").insert({
+    const { error: insertError } = await supabase.from('cart_items').insert({
       cart_id: cart.id,
       product_id: productId,
       quantity,
@@ -195,7 +195,7 @@ export async function addToCart(productId: number, quantity: number = 1) {
     }
   }
 
-  revalidatePath("/cart");
+  revalidatePath('/cart');
 }
 
 type CartItemWithProductStock = {
@@ -219,12 +219,12 @@ export async function updateCartItemQuantity(
   const supabase = await createClient();
 
   if (quantity < 1) {
-    throw new Error("수량은 1개 이상이어야 합니다.");
+    throw new Error('수량은 1개 이상이어야 합니다.');
   }
 
   // cart_item + product 재고 확인
   const { data, error: itemError } = await supabase
-    .from("cart_items")
+    .from('cart_items')
     .select(
       `
     id,
@@ -235,13 +235,13 @@ export async function updateCartItemQuantity(
     )
   `,
     )
-    .eq("id", cartItemId)
+    .eq('id', cartItemId)
     .single();
 
   const item = data as CartItemWithProductStock | null;
 
   if (itemError || !item) {
-    throw new Error("장바구니 상품을 찾을 수 없습니다.");
+    throw new Error('장바구니 상품을 찾을 수 없습니다.');
   }
 
   const product = Array.isArray(item.products)
@@ -250,40 +250,40 @@ export async function updateCartItemQuantity(
 
   const stock = product?.stock ?? 0;
 
-  if (quantity > stock) {
-    throw new Error("재고보다 많이 담을 수 없습니다.");
+  if (stock == null) {
+    throw new Error('상품 재고 정보를 찾을 수 없습니다.');
   }
 
-  if (stock == null) {
-    throw new Error("상품 재고 정보를 찾을 수 없습니다.");
+  if (quantity > stock) {
+    throw new Error('재고보다 많이 담을 수 없습니다.');
   }
 
   const { error: updateError } = await supabase
-    .from("cart_items")
+    .from('cart_items')
     .update({
       quantity,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", cartItemId);
+    .eq('id', cartItemId);
 
   if (updateError) {
     throw new Error(`수량 변경 실패: ${updateError.message}`);
   }
 
-  revalidatePath("/cart");
+  revalidatePath('/cart');
 }
 
 export async function removeCartItem(cartItemId: number) {
   const supabase = await createClient();
 
   const { error } = await supabase
-    .from("cart_items")
+    .from('cart_items')
     .delete()
-    .eq("id", cartItemId);
+    .eq('id', cartItemId);
 
   if (error) {
     throw new Error(`장바구니 삭제 실패: ${error.message}`);
   }
 
-  revalidatePath("/cart");
+  revalidatePath('/cart');
 }
