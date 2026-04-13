@@ -16,6 +16,11 @@ const menuItems = [
     description: "주문자 이름과 연락처를 수정할 수 있습니다.",
     href: "/mypage/profile",
   },
+  {
+    title: "주소지 관리",
+    description: "배송지를 추가하고 기본 배송지를 관리할 수 있습니다.",
+    href: "/mypage/addresses",
+  },
 ];
 
 export default function MyPage() {
