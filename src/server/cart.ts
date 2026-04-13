@@ -202,9 +202,14 @@ type CartItemWithProductStock = {
   id: number;
   quantity: number;
   product_id: number;
-  products: {
-    stock: number;
-  } | null;
+  products:
+    | {
+        stock: number;
+      }
+    | {
+        stock: number;
+      }[]
+    | null;
 };
 
 export async function updateCartItemQuantity(
@@ -239,14 +244,18 @@ export async function updateCartItemQuantity(
     throw new Error("장바구니 상품을 찾을 수 없습니다.");
   }
 
-  const stock = item.products?.stock;
+  const product = Array.isArray(item.products)
+    ? item.products[0]
+    : item.products;
 
-  if (stock == null) {
-    throw new Error("상품 재고 정보를 찾을 수 없습니다.");
-  }
+  const stock = product?.stock ?? 0;
 
   if (quantity > stock) {
     throw new Error("재고보다 많이 담을 수 없습니다.");
+  }
+
+  if (stock == null) {
+    throw new Error("상품 재고 정보를 찾을 수 없습니다.");
   }
 
   const { error: updateError } = await supabase
