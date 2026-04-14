@@ -1,25 +1,25 @@
-import Link from "next/link";
+import Link from 'next/link';
 
 const menuItems = [
   {
-    title: "주문내역",
-    description: "주문한 상품과 배송 상태를 확인할 수 있습니다.",
-    href: "/mypage/orders",
+    title: '주문내역',
+    description: '주문한 상품과 배송 상태를 확인할 수 있습니다.',
+    href: '/mypage/orders',
   },
   {
-    title: "장바구니",
-    description: "장바구니에 담아둔 상품을 확인하고 수량을 변경할 수 있습니다.",
-    href: "/mypage/cart",
+    title: '장바구니',
+    description: '장바구니에 담아둔 상품을 확인하고 수량을 변경할 수 있습니다.',
+    href: '/mypage/cart',
   },
   {
-    title: "회원정보 수정",
-    description: "주문자 이름과 연락처를 수정할 수 있습니다.",
-    href: "/mypage/profile",
+    title: '회원정보 수정',
+    description: '주문자 이름과 연락처를 수정할 수 있습니다.',
+    href: '/mypage/profile',
   },
   {
-    title: "주소지 관리",
-    description: "배송지를 추가하고 기본 배송지를 관리할 수 있습니다.",
-    href: "/mypage/addresses",
+    title: '주소지 관리',
+    description: '배송지를 추가하고 기본 배송지를 관리할 수 있습니다.',
+    href: '/mypage/addresses',
   },
 ];
 
