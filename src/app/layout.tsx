@@ -7,6 +7,7 @@ import { createClient } from "@/src/lib/supabase/server";
 import { logout } from "@/src/app/logout/actions";
 import CategoryMenu from "@/src/components/CategoryMenu";
 import MobileMenu from "@/src/components/MobileMenu";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Kids One Mall",
@@ -87,6 +88,7 @@ export default async function RootLayout({
           src="//t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
           strategy="afterInteractive"
         />
+        <Toaster position="top-center" expand richColors duration={2000} />
       </body>
     </html>
   );

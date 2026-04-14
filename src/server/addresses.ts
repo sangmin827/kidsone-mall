@@ -88,8 +88,16 @@ export async function createMyAddress(formData: FormData) {
   const address_detail = String(formData.get("address_detail") ?? "").trim();
   const memo = String(formData.get("memo") ?? "").trim();
 
-  if (!recipient_name || !recipient_phone || !postal_code || !address_main) {
-    throw new Error("수령자 이름, 연락처, 우편번호, 주소는 필수입니다.");
+  if (
+    !recipient_name ||
+    !recipient_phone ||
+    !postal_code ||
+    !address_main ||
+    !address_detail
+  ) {
+    throw new Error(
+      "수령자 이름, 연락처, 우편번호, 기본주소, 상세주소는 필수입니다.",
+    );
   }
 
   const { error } = await supabase.from("shipping_addresses").insert({

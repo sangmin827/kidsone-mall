@@ -1,31 +1,20 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useFormStatus } from "react-dom";
+import { toast } from "sonner";
 import { createMyAddress } from "@/src/server/addresses";
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-    >
-      {pending ? "저장 중..." : "배송지 추가"}
-    </button>
-  );
-}
-
 export default function AddressForm() {
+  const formRef = useRef<HTMLFormElement>(null);
+  const detailAddressRef = useRef<HTMLInputElement>(null);
+
   const [postalCode, setPostalCode] = useState("");
   const [addressMain, setAddressMain] = useState("");
-  const detailAddressRef = useRef<HTMLInputElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSearchAddress = () => {
     if (!window.kakao?.Postcode) {
-      alert("주소 검색 서비스를 불러오지 못했습니다.");
+      toast.error("주소 검색 서비스를 불러오지 못했습니다.");
       return;
     }
 
@@ -66,9 +55,69 @@ export default function AddressForm() {
     }).open();
   };
 
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (isSubmitting) return;
+
+    const formData = new FormData(event.currentTarget);
+
+    const recipientName = String(formData.get("recipient_name") ?? "").trim();
+    const recipientPhone = String(formData.get("recipient_phone") ?? "").trim();
+    const postalCodeValue = String(formData.get("postal_code") ?? "").trim();
+    const addressMainValue = String(formData.get("address_main") ?? "").trim();
+    const addressDetail = String(formData.get("address_detail") ?? "").trim();
+
+    if (!recipientName) {
+      toast.error("이름을 입력해주세요.");
+      return;
+    }
+
+    if (!recipientPhone) {
+      toast.error("연락처를 입력해주세요.");
+      return;
+    }
+
+    if (!postalCodeValue) {
+      toast.error("우편번호를 입력해주세요.");
+      return;
+    }
+
+    if (!addressMainValue) {
+      toast.error("기본 주소를 입력해주세요.");
+      return;
+    }
+
+    if (!addressDetail) {
+      toast.error("상세 주소를 입력해주세요.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      await createMyAddress(formData);
+
+      formRef.current?.reset();
+      setPostalCode("");
+      setAddressMain("");
+
+      toast.success("배송지가 추가되었습니다.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "배송지 추가 중 오류가 발생했습니다.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <form
-      action={createMyAddress}
+      ref={formRef}
+      onSubmit={handleSubmit}
       className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6"
     >
       <h2 className="text-lg font-bold">배송지 추가</h2>
@@ -113,17 +162,23 @@ export default function AddressForm() {
       <input
         ref={detailAddressRef}
         name="address_detail"
-        placeholder="상세 주소"
+        placeholder='상세 주소 (동, 호수가 없는 주택은 "주택"으로 남겨주세요)'
         className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
       />
 
       <input
         name="memo"
-        placeholder="비고사항"
+        placeholder="배송 메시지 or 기타사항"
         className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
       />
 
-      <SubmitButton />
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+      >
+        {isSubmitting ? "저장 중..." : "배송지 추가"}
+      </button>
     </form>
   );
 }

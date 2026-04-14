@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from "react";
 import {
   increaseCartItemAction,
   removeCartItemAction,
   setCartItemQuantityAction,
-} from '@/src/app/mypage/cart/actions';
+} from "@/src/app/mypage/cart/actions";
 
 type Props = {
   cartItemId: number;
@@ -22,7 +22,7 @@ export default function CartItemControls({
 }: Props) {
   const [quantity, setQuantity] = useState(initialQuantity);
   const [isPending, startTransition] = useTransition();
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     setQuantity(initialQuantity);
@@ -41,11 +41,11 @@ export default function CartItemControls({
     const prev = quantity;
     const next = Math.max(1, prev - 1);
     setQuantity(next);
-    setErrorMessage('');
+    setErrorMessage("");
 
     const formData = new FormData();
-    formData.set('cartItemId', String(cartItemId));
-    formData.set('quantity', String(next));
+    formData.set("cartItemId", String(cartItemId));
+    formData.set("quantity", String(next));
 
     startTransition(async () => {
       const result = await setCartItemQuantityAction(formData);
@@ -62,14 +62,14 @@ export default function CartItemControls({
     const prev = quantity;
     const next = Math.min(stock, prev + 1);
     setQuantity(next);
-    setErrorMessage('');
+    setErrorMessage("");
 
     const formData = new FormData();
-    formData.set('cartItemId', String(cartItemId));
-    formData.set('currentQuantity', String(prev));
+    formData.set("cartItemId", String(cartItemId));
+    formData.set("quantity", String(next));
 
     startTransition(async () => {
-      const result = await increaseCartItemAction(formData);
+      const result = await setCartItemQuantityAction(formData);
       if (!result.ok) {
         setQuantity(prev);
         setErrorMessage(result.message);
@@ -78,7 +78,7 @@ export default function CartItemControls({
   };
 
   const handleInputChange = (value: string) => {
-    if (value === '') {
+    if (value === "") {
       setQuantity(1);
       return;
     }
@@ -88,11 +88,11 @@ export default function CartItemControls({
   const handleInputCommit = () => {
     const next = clampQuantity(quantity);
     setQuantity(next);
-    setErrorMessage('');
+    setErrorMessage("");
 
     const formData = new FormData();
-    formData.set('cartItemId', String(cartItemId));
-    formData.set('quantity', String(next));
+    formData.set("cartItemId", String(cartItemId));
+    formData.set("quantity", String(next));
 
     startTransition(async () => {
       const result = await setCartItemQuantityAction(formData);
@@ -103,10 +103,10 @@ export default function CartItemControls({
   };
 
   const handleRemove = () => {
-    setErrorMessage('');
+    setErrorMessage("");
 
     const formData = new FormData();
-    formData.set('cartItemId', String(cartItemId));
+    formData.set("cartItemId", String(cartItemId));
 
     startTransition(async () => {
       const result = await removeCartItemAction(formData);
@@ -137,7 +137,7 @@ export default function CartItemControls({
             onChange={(e) => handleInputChange(e.target.value)}
             onBlur={handleInputCommit}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+              if (e.key === "Enter") {
                 e.currentTarget.blur();
               }
             }}
