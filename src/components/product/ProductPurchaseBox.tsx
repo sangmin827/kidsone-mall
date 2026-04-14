@@ -1,8 +1,10 @@
-'use client';
+//src/components/product/ProductPurchaseBox.tsx
 
-import { useEffect, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { addToCartAction } from '@/src/app/products/[slug]/actions';
+"use client";
+
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { addToCartAction } from "@/src/app/products/[slug]/actions";
 
 type Props = {
   productId: number;
@@ -14,7 +16,7 @@ type Props = {
 type ToastState = {
   show: boolean;
   message: string;
-  type: 'success' | 'error';
+  type: "success" | "error";
 };
 
 export default function ProductPurchaseBox({
@@ -29,8 +31,8 @@ export default function ProductPurchaseBox({
   const [isBuyChoiceOpen, setIsBuyChoiceOpen] = useState(false);
   const [toast, setToast] = useState<ToastState>({
     show: false,
-    message: '',
-    type: 'success',
+    message: "",
+    type: "success",
   });
 
   const isSoldOut = stock <= 0;
@@ -65,7 +67,7 @@ export default function ProductPurchaseBox({
   };
 
   const handleChangeQuantity = (value: string) => {
-    if (value === '') {
+    if (value === "") {
       setQuantity(1);
       return;
     }
@@ -74,7 +76,7 @@ export default function ProductPurchaseBox({
     setQuantity(normalizeQuantity(next));
   };
 
-  const openToast = (message: string, type: 'success' | 'error') => {
+  const openToast = (message: string, type: "success" | "error") => {
     setToast({
       show: true,
       message,
@@ -84,17 +86,17 @@ export default function ProductPurchaseBox({
 
   const handleAddToCart = () => {
     const formData = new FormData();
-    formData.set('productId', String(productId));
-    formData.set('quantity', String(quantity));
+    formData.set("productId", String(productId));
+    formData.set("quantity", String(quantity));
 
     startTransition(async () => {
       const result = await addToCartAction(formData);
 
       if (result.ok) {
-        openToast(result.message, 'success');
+        openToast(result.message, "success");
         router.refresh();
       } else {
-        openToast(result.message, 'error');
+        openToast(result.message, "error");
       }
     });
   };
@@ -125,24 +127,24 @@ export default function ProductPurchaseBox({
       {toast.show && (
         <div
           className={`absolute right-0 top-0 z-20 w-full max-w-sm -translate-y-16 rounded-xl border px-4 py-3 shadow-lg ${
-            toast.type === 'success'
-              ? 'border-green-200 bg-white'
-              : 'border-red-200 bg-white'
+            toast.type === "success"
+              ? "border-green-200 bg-white"
+              : "border-red-200 bg-white"
           }`}
         >
           <div className="flex items-center justify-between gap-3">
             <p
               className={`text-sm font-medium ${
-                toast.type === 'success' ? 'text-gray-900' : 'text-red-500'
+                toast.type === "success" ? "text-gray-900" : "text-red-500"
               }`}
             >
               {toast.message}
             </p>
 
-            {toast.type === 'success' && (
+            {toast.type === "success" && (
               <button
                 type="button"
-                onClick={() => router.push('/mypage/cart')}
+                onClick={() => router.push("/mypage/cart")}
                 className="shrink-0 rounded-lg bg-black px-3 py-2 text-xs font-semibold text-white"
               >
                 장바구니로 가기
@@ -250,7 +252,7 @@ export default function ProductPurchaseBox({
             disabled={isSoldOut || isPending}
             className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm font-semibold hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100"
           >
-            {isPending ? '처리 중...' : '장바구니 담기'}
+            {isPending ? "처리 중..." : "장바구니 담기"}
           </button>
 
           <button

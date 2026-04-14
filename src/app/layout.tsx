@@ -32,28 +32,40 @@ export default async function RootLayout({
   const user = userData.user;
   const isLoggedIn = !!user;
 
+  let profile: { role: string | null } | null = null;
+
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    profile = data;
+  }
+
   return (
     <html lang="ko">
       <body className="bg-white text-gray-900 antialiased">
-        <header className="static lg:sticky top-0 z-50 border-b border-gray-200 bg-white">
+        <header className="static top-0 z-50 border-b border-gray-200 bg-white lg:sticky">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
             <Link
               href="/"
-              className="flex justify-center md:justify-center flex-1 md:flex-none"
+              className="flex flex-1 justify-center md:flex-none md:justify-center"
             >
               <Image
                 src="/kids-one-logo.png"
                 alt="KidsOne 로고"
                 width={80}
                 height={60}
-                className="md:w-12 w-14 h-auto"
+                className="h-auto w-14 md:w-12"
                 priority
               />
             </Link>
 
             <CategoryMenu />
 
-            <div className="hidden md:flex items-center gap-4 text-xs">
+            <div className="hidden items-center gap-4 text-xs md:flex">
               {user ? (
                 <>
                   <form action={logout}>
@@ -61,21 +73,28 @@ export default async function RootLayout({
                       로그아웃
                     </button>
                   </form>
+
                   <Link href="/mypage/cart" className="nav-actions">
                     장바구니
                   </Link>
+
                   <Link href="/mypage" className="nav-actions">
                     마이페이지
                   </Link>
+
+                  {profile?.role === "admin" && (
+                    <Link href="/admin/orders" className="nav-actions">
+                      관리자 주문관리
+                    </Link>
+                  )}
                 </>
               ) : (
-                <>
-                  <Link href="/login" className="nav-actions">
-                    로그인
-                  </Link>
-                </>
+                <Link href="/login" className="nav-actions">
+                  로그인
+                </Link>
               )}
             </div>
+
             <MobileMenu
               categories={categories}
               isLoggedIn={isLoggedIn}
@@ -83,12 +102,15 @@ export default async function RootLayout({
             />
           </div>
         </header>
+
         {children}
+
         <Script
           src="//t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
           strategy="afterInteractive"
         />
-        <Toaster position="top-center" expand richColors duration={2000} />
+
+        <Toaster position="top-center" richColors expand closeButton />
       </body>
     </html>
   );

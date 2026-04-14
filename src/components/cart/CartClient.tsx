@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import {
   removeCartItemAction,
   setCartItemQuantityAction,
@@ -14,7 +14,7 @@ type ProductImage = {
   sort_order: number | null;
 };
 
-type Product = {
+type CartProduct = {
   id: number;
   name: string;
   slug: string;
@@ -26,7 +26,7 @@ type Product = {
 type CartItem = {
   id: number;
   quantity: number;
-  products: Product | null;
+  products: CartProduct | null;
 };
 
 type Props = {
@@ -34,9 +34,24 @@ type Props = {
 };
 
 export default function CartClient({ initialItems }: Props) {
-  const [items, setItems] = useState(initialItems);
-  const [pendingId, setPendingId] = useState<number | null>(null);
+  const [items, setItems] = useState<CartItem[]>(initialItems);
   const [errorMessage, setErrorMessage] = useState("");
+  const [removingId, setRemovingId] = useState<number | null>(null);
+
+  const debounceTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>(
+    {},
+  );
+  const latestItemsRef = useRef<CartItem[]>(initialItems);
+
+  useEffect(() => {
+    latestItemsRef.current = items;
+  }, [items]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(debounceTimers.current).forEach(clearTimeout);
+    };
+  }, []);
 
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -57,40 +72,95 @@ export default function CartClient({ initialItems }: Props) {
     return item.quantity > product.stock;
   });
 
-  const updateItemQuantityOptimistically = async (
-    cartItemId: number,
-    nextQuantity: number,
-  ) => {
-    const prevItems = items;
+  const clampQuantity = (value: number, stock: number) => {
+    if (Number.isNaN(value)) return 1;
+    if (value < 1) return 1;
+    if (stock > 0 && value > stock) return stock;
+    return value;
+  };
 
+  const syncQuantityToServer = (cartItemId: number, quantity: number) => {
+    if (debounceTimers.current[cartItemId]) {
+      clearTimeout(debounceTimers.current[cartItemId]);
+    }
+
+    debounceTimers.current[cartItemId] = setTimeout(async () => {
+      const prevItems = latestItemsRef.current;
+
+      const formData = new FormData();
+      formData.set("cartItemId", String(cartItemId));
+      formData.set("quantity", String(quantity));
+
+      const result = await setCartItemQuantityAction(formData);
+
+      if (!result.ok) {
+        setItems(prevItems);
+        setErrorMessage(result.message);
+      }
+    }, 250);
+  };
+
+  const updateLocalQuantity = (cartItemId: number, nextQuantity: number) => {
     setItems((current) =>
       current.map((item) =>
         item.id === cartItemId ? { ...item, quantity: nextQuantity } : item,
       ),
     );
-
-    setPendingId(cartItemId);
     setErrorMessage("");
-
-    const formData = new FormData();
-    formData.set("cartItemId", String(cartItemId));
-    formData.set("quantity", String(nextQuantity));
-
-    const result = await setCartItemQuantityAction(formData);
-
-    if (!result.ok) {
-      setItems(prevItems);
-      setErrorMessage(result.message);
-    }
-
-    setPendingId(null);
+    syncQuantityToServer(cartItemId, nextQuantity);
   };
 
-  const removeItemOptimistically = async (cartItemId: number) => {
-    const prevItems = items;
+  const handleIncrease = (item: CartItem) => {
+    const product = item.products;
+    if (!product) return;
+    if (product.stock <= 0) return;
+    if (item.quantity >= product.stock) return;
 
+    const next = Math.min(product.stock, item.quantity + 1);
+    updateLocalQuantity(item.id, next);
+  };
+
+  const handleDecrease = (item: CartItem) => {
+    const product = item.products;
+    if (!product) return;
+    if (item.quantity <= 1) return;
+
+    const next = Math.max(1, item.quantity - 1);
+    updateLocalQuantity(item.id, next);
+  };
+
+  const handleInputChange = (
+    cartItemId: number,
+    value: string,
+    stock: number,
+  ) => {
+    const next = value === "" ? 1 : clampQuantity(Number(value), stock);
+
+    setItems((current) =>
+      current.map((item) =>
+        item.id === cartItemId ? { ...item, quantity: next } : item,
+      ),
+    );
+  };
+
+  const handleInputCommit = (item: CartItem) => {
+    const product = item.products;
+    if (!product) return;
+
+    const next = clampQuantity(item.quantity, product.stock);
+    updateLocalQuantity(item.id, next);
+  };
+
+  const handleRemove = async (cartItemId: number) => {
+    const prevItems = latestItemsRef.current;
+
+    if (debounceTimers.current[cartItemId]) {
+      clearTimeout(debounceTimers.current[cartItemId]);
+      delete debounceTimers.current[cartItemId];
+    }
+
+    setRemovingId(cartItemId);
     setItems((current) => current.filter((item) => item.id !== cartItemId));
-    setPendingId(cartItemId);
     setErrorMessage("");
 
     const formData = new FormData();
@@ -103,7 +173,7 @@ export default function CartClient({ initialItems }: Props) {
       setErrorMessage(result.message);
     }
 
-    setPendingId(null);
+    setRemovingId(null);
   };
 
   return (
@@ -183,70 +253,54 @@ export default function CartClient({ initialItems }: Props) {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between border-t pt-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={pendingId === item.id || item.quantity <= 1}
-                        onClick={() =>
-                          updateItemQuantityOptimistically(
-                            item.id,
-                            Math.max(1, item.quantity - 1),
-                          )
-                        }
-                        className="h-9 w-9 rounded-lg border text-lg disabled:opacity-50"
-                      >
-                        -
-                      </button>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleDecrease(item)}
+                          disabled={item.quantity <= 1}
+                          className="h-9 w-9 rounded-lg border text-lg hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          -
+                        </button>
 
-                      <input
-                        type="number"
-                        min={1}
-                        max={product.stock > 0 ? product.stock : 1}
-                        value={item.quantity}
-                        onChange={(e) => {
-                          const next = Number(e.target.value);
-                          if (!next || next < 1) return;
-                          if (next > product.stock) return;
-                          setItems((current) =>
-                            current.map((currentItem) =>
-                              currentItem.id === item.id
-                                ? { ...currentItem, quantity: next }
-                                : currentItem,
-                            ),
-                          );
-                        }}
-                        onBlur={(e) => {
-                          const next = Number(e.target.value);
-                          if (!next || next < 1 || next > product.stock) return;
-                          updateItemQuantityOptimistically(item.id, next);
-                        }}
-                        className="h-9 w-20 rounded-lg border text-center text-sm font-semibold outline-none"
-                      />
+                        <input
+                          type="number"
+                          min={1}
+                          max={product.stock > 0 ? product.stock : 1}
+                          value={item.quantity}
+                          onChange={(e) =>
+                            handleInputChange(
+                              item.id,
+                              e.target.value,
+                              product.stock,
+                            )
+                          }
+                          onBlur={() => handleInputCommit(item)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.currentTarget.blur();
+                            }
+                          }}
+                          className="h-9 w-20 rounded-lg border text-center text-sm font-semibold outline-none"
+                        />
 
-                      <button
-                        type="button"
-                        disabled={
-                          pendingId === item.id ||
-                          isSoldOut ||
-                          item.quantity >= product.stock
-                        }
-                        onClick={() =>
-                          updateItemQuantityOptimistically(
-                            item.id,
-                            Math.min(product.stock, item.quantity + 1),
-                          )
-                        }
-                        className="h-9 w-9 rounded-lg border text-lg disabled:opacity-50"
-                      >
-                        +
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => handleIncrease(item)}
+                          disabled={isSoldOut || item.quantity >= product.stock}
+                          className="h-9 w-9 rounded-lg border text-lg hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
 
                     <button
                       type="button"
-                      disabled={pendingId === item.id}
-                      onClick={() => removeItemOptimistically(item.id)}
-                      className="rounded-lg border px-3 py-2 text-sm text-red-500 disabled:opacity-50"
+                      onClick={() => handleRemove(item.id)}
+                      disabled={removingId === item.id}
+                      className="rounded-lg border px-3 py-2 text-sm text-red-500 hover:bg-red-50 disabled:opacity-50"
                     >
                       삭제
                     </button>

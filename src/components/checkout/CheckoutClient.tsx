@@ -1,13 +1,15 @@
-'use client';
+"use client";
 
-import { useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import type {
   BankAccount,
   CheckoutItem,
   SavedAddress,
-} from '@/src/server/checkout';
+} from "@/src/server/checkout";
+import { toast } from "sonner";
 
 type Props = {
   initialItems: CheckoutItem[];
@@ -15,7 +17,7 @@ type Props = {
   bankAccounts: BankAccount[];
 };
 
-type AddressMode = 'new' | 'default' | 'saved';
+type AddressMode = "new" | "default" | "saved";
 
 export default function CheckoutClient({
   initialItems,
@@ -23,11 +25,15 @@ export default function CheckoutClient({
   bankAccounts,
 }: Props) {
   const [items, setItems] = useState<CheckoutItem[]>(initialItems);
+  const [saveNewAddress, setSaveNewAddress] = useState(false);
+  const [saveAsDefault, setSaveAsDefault] = useState(false);
+  const [isOrdering, setIsOrdering] = useState(false);
+  const router = useRouter();
 
   const defaultAddress =
     addresses.find((address) => address.is_default) ?? null;
   const [addressMode, setAddressMode] = useState<AddressMode>(
-    defaultAddress ? 'default' : addresses.length > 0 ? 'saved' : 'new',
+    defaultAddress ? "default" : addresses.length > 0 ? "saved" : "new",
   );
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
     defaultAddress?.id ?? addresses[0]?.id ?? null,
@@ -36,12 +42,12 @@ export default function CheckoutClient({
   const detailAddressRef = useRef<HTMLInputElement>(null);
 
   const [newAddress, setNewAddress] = useState({
-    recipient_name: '',
-    recipient_phone: '',
-    postal_code: '',
-    address_main: '',
-    address_detail: '',
-    memo: '',
+    recipient_name: "",
+    recipient_phone: "",
+    postal_code: "",
+    address_main: "",
+    address_detail: "",
+    memo: "",
   });
 
   const totalQuantity = useMemo(
@@ -106,7 +112,9 @@ export default function CheckoutClient({
 
   const handleSearchAddress = () => {
     if (!window.kakao?.Postcode) {
-      alert('주소 검색 서비스를 불러오지 못했습니다.');
+      toast.warning("주소 검색 서비스를 불러오지 못했습니다.", {
+        duration: 2000,
+      });
       return;
     }
 
@@ -120,21 +128,21 @@ export default function CheckoutClient({
         apartment: string;
         zonecode: string;
       }) => {
-        let addr = '';
-        let extraAddr = '';
+        let addr = "";
+        let extraAddr = "";
 
-        if (data.userSelectedType === 'R') {
+        if (data.userSelectedType === "R") {
           addr = data.roadAddress;
         } else {
           addr = data.jibunAddress;
         }
 
-        if (data.userSelectedType === 'R') {
+        if (data.userSelectedType === "R") {
           if (data.bname && /[동로가]$/.test(data.bname)) {
             extraAddr += data.bname;
           }
 
-          if (data.buildingName && data.apartment === 'Y') {
+          if (data.buildingName && data.apartment === "Y") {
             extraAddr += extraAddr
               ? `, ${data.buildingName}`
               : data.buildingName;
@@ -156,6 +164,124 @@ export default function CheckoutClient({
         }, 0);
       },
     }).open();
+  };
+
+  const handleOrder = async () => {
+    if (isOrdering) return;
+
+    const toastId = toast.loading("주문 처리 중...");
+
+    try {
+      setIsOrdering(true);
+
+      let recipient_name = "";
+      let recipient_phone = "";
+      let zip_code = "";
+      let address = "";
+      let detail_address = "";
+      let request_message = "";
+
+      if (addressMode === "new") {
+        recipient_name = newAddress.recipient_name.trim();
+        recipient_phone = newAddress.recipient_phone.trim();
+        zip_code = newAddress.postal_code.trim();
+        address = newAddress.address_main.trim();
+        detail_address = newAddress.address_detail.trim();
+        request_message = newAddress.memo.trim();
+
+        if (
+          !recipient_name ||
+          !recipient_phone ||
+          !zip_code ||
+          !address ||
+          !detail_address
+        ) {
+          toast.warning("배송지 정보를 모두 입력해주세요.", {
+            id: toastId,
+            duration: 2000,
+          });
+          return;
+        }
+
+        if (saveNewAddress) {
+          const addressRes = await fetch("/api/addresses", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              recipient_name,
+              recipient_phone,
+              postal_code: zip_code,
+              address_main: address,
+              address_detail: detail_address,
+              memo: request_message,
+            }),
+          });
+
+          const addressData = await addressRes.json();
+
+          if (!addressRes.ok || !addressData.ok) {
+            throw new Error(addressData.message ?? "주소 저장에 실패했습니다.");
+          }
+          toast.success("주소가 저장되었습니다.", { duration: 1500 });
+        }
+      } else if (addressMode === "default" && defaultAddress) {
+        recipient_name = defaultAddress.recipient_name;
+        recipient_phone = defaultAddress.recipient_phone;
+        zip_code = defaultAddress.zip_code ?? "";
+        address = defaultAddress.address;
+        detail_address = defaultAddress.detail_address ?? "";
+        request_message = "";
+      } else if (addressMode === "saved" && selectedSavedAddress) {
+        recipient_name = selectedSavedAddress.recipient_name;
+        recipient_phone = selectedSavedAddress.recipient_phone;
+        zip_code = selectedSavedAddress.zip_code ?? "";
+        address = selectedSavedAddress.address;
+        detail_address = selectedSavedAddress.detail_address ?? "";
+        request_message = "";
+      } else {
+        toast.warning("배송지를 선택해주세요.", {
+          id: toastId,
+          duration: 2000,
+        });
+        return;
+      }
+
+      const orderRes = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          recipient_name,
+          recipient_phone,
+          zip_code,
+          address,
+          detail_address,
+          request_message,
+        }),
+      });
+
+      const orderData = await orderRes.json();
+
+      if (!orderRes.ok || !orderData.ok) {
+        throw new Error(orderData.message ?? "주문에 실패했습니다.");
+      }
+
+      toast.success("주문이 완료되었습니다!", { id: toastId, duration: 1500 });
+      router.push("/mypage/orders");
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "주문 처리 중 오류가 발생했습니다.",
+        { id: toastId, duration: 2000 },
+      );
+    } finally {
+      setIsOrdering(false);
+    }
   };
 
   return (
@@ -186,7 +312,7 @@ export default function CheckoutClient({
                     <div className="flex gap-4">
                       <div className="relative h-24 w-24 overflow-hidden rounded-xl bg-gray-100">
                         <Image
-                          src={item.image_url ?? '/placeholder.png'}
+                          src={item.image_url ?? "/placeholder.png"}
                           alt={item.name}
                           fill
                           className="object-cover"
@@ -207,7 +333,7 @@ export default function CheckoutClient({
                         {(isSoldOut || isOverStock) && (
                           <p className="mt-2 text-sm font-medium text-red-500">
                             {isSoldOut
-                              ? '품절된 상품입니다.'
+                              ? "품절된 상품입니다."
                               : `재고보다 많이 선택했습니다. 현재 재고: ${item.stock}개`}
                           </p>
                         )}
@@ -275,8 +401,8 @@ export default function CheckoutClient({
               <input
                 type="radio"
                 name="addressMode"
-                checked={addressMode === 'new'}
-                onChange={() => setAddressMode('new')}
+                checked={addressMode === "new"}
+                onChange={() => setAddressMode("new")}
               />
               <span className="text-sm">새로운 주소지 입력</span>
             </label>
@@ -285,8 +411,8 @@ export default function CheckoutClient({
               <input
                 type="radio"
                 name="addressMode"
-                checked={addressMode === 'default'}
-                onChange={() => setAddressMode('default')}
+                checked={addressMode === "default"}
+                onChange={() => setAddressMode("default")}
                 disabled={!defaultAddress}
               />
               <span className="text-sm">기본 주소지 선택</span>
@@ -296,15 +422,15 @@ export default function CheckoutClient({
               <input
                 type="radio"
                 name="addressMode"
-                checked={addressMode === 'saved'}
-                onChange={() => setAddressMode('saved')}
+                checked={addressMode === "saved"}
+                onChange={() => setAddressMode("saved")}
                 disabled={addresses.length === 0}
               />
               <span className="text-sm">저장된 주소지에서 선택</span>
             </label>
           </div>
 
-          {addressMode === 'new' && (
+          {addressMode === "new" && (
             <div className="mt-5 space-y-3">
               <input
                 placeholder="수령자 이름"
@@ -362,7 +488,7 @@ export default function CheckoutClient({
                     address_detail: e.target.value,
                   }))
                 }
-                placeholder="상세 주소"
+                placeholder='상세 주소 (동, 호수가 없는 주택은 "주택"으로 남겨주세요)'
                 className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
               />
 
@@ -374,27 +500,55 @@ export default function CheckoutClient({
                     memo: e.target.value,
                   }))
                 }
-                placeholder="비고사항"
+                placeholder="배송 메시지 or 기타사항"
                 className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
               />
+              <div className="space-y-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={saveNewAddress}
+                    disabled={addresses.length >= 3}
+                    onChange={(e) => setSaveNewAddress(e.target.checked)}
+                  />
+                  <span className="text-sm">이 주소를 주소록에 저장</span>
+                </label>
+
+                {addresses.length >= 3 && (
+                  <p className="text-sm text-red-500">
+                    배송지는 최대 3개까지만 저장할 수 있습니다.
+                  </p>
+                )}
+
+                {saveNewAddress && (
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={saveAsDefault}
+                      onChange={(e) => setSaveAsDefault(e.target.checked)}
+                    />
+                    <span className="text-sm">기본 배송지로 저장</span>
+                  </label>
+                )}
+              </div>
             </div>
           )}
 
-          {addressMode === 'default' && defaultAddress && (
+          {addressMode === "default" && defaultAddress && (
             <div className="mt-5 rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
               <p>받는 사람: {defaultAddress.recipient_name}</p>
               <p className="mt-1">연락처: {defaultAddress.recipient_phone}</p>
               <p className="mt-1">
-                주소: ({defaultAddress.zip_code}) {defaultAddress.address}{' '}
-                {defaultAddress.detail_address ?? ''}
+                주소: ({defaultAddress.zip_code}) {defaultAddress.address}{" "}
+                {defaultAddress.detail_address ?? ""}
               </p>
             </div>
           )}
 
-          {addressMode === 'saved' && (
+          {addressMode === "saved" && (
             <div className="mt-5 space-y-3">
               <select
-                value={selectedAddressId ?? ''}
+                value={selectedAddressId ?? ""}
                 onChange={(e) => setSelectedAddressId(Number(e.target.value))}
                 className="w-full rounded-xl border px-3 py-2"
               >
@@ -413,9 +567,9 @@ export default function CheckoutClient({
                     연락처: {selectedSavedAddress.recipient_phone}
                   </p>
                   <p className="mt-1">
-                    주소: ({selectedSavedAddress.zip_code}){' '}
-                    {selectedSavedAddress.address}{' '}
-                    {selectedSavedAddress.detail_address ?? ''}
+                    주소: ({selectedSavedAddress.zip_code}){" "}
+                    {selectedSavedAddress.address}{" "}
+                    {selectedSavedAddress.detail_address ?? ""}
                   </p>
                 </div>
               )}
@@ -479,10 +633,11 @@ export default function CheckoutClient({
 
         <button
           type="button"
-          disabled={items.length === 0 || hasInvalidItem}
+          onClick={handleOrder}
+          disabled={isOrdering || items.length === 0 || hasInvalidItem}
           className="mt-6 w-full rounded-xl bg-black px-4 py-3 text-white disabled:bg-gray-400"
         >
-          무통장 주문하기
+          {isOrdering ? "주문 처리 중..." : "무통장 주문하기"}
         </button>
       </aside>
     </div>

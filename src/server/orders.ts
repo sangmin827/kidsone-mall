@@ -292,3 +292,188 @@ export async function createOrderFromCart(input: CheckoutInput) {
 
   return order;
 }
+
+export type AdminOrderItem = {
+  id: number;
+  product_id: number;
+  product_name_snapshot: string;
+  price_snapshot: number;
+  quantity: number;
+};
+
+export type AdminOrder = {
+  id: number;
+  user_id: string;
+  order_number: string;
+  status:
+    | "pending"
+    | "paid"
+    | "preparing"
+    | "shipping"
+    | "delivered"
+    | "cancelled";
+  payment_method: string;
+  total_amount: number;
+  depositor_name: string | null;
+  orderer_name: string | null;
+  orderer_phone: string | null;
+  recipient_name: string;
+  recipient_phone: string;
+  zip_code: string | null;
+  address: string;
+  detail_address: string | null;
+  request_message: string | null;
+  created_at: string;
+  order_items: AdminOrderItem[];
+};
+
+async function requireAdmin() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throw new Error("로그인이 필요합니다.");
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, role")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || !profile) {
+    throw new Error("프로필 정보를 확인할 수 없습니다.");
+  }
+
+  if (profile.role !== "admin") {
+    throw new Error("관리자만 접근할 수 있습니다.");
+  }
+
+  return { supabase, user };
+}
+
+export async function getAdminOrders(): Promise<AdminOrder[]> {
+  const { supabase } = await requireAdmin();
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      `
+      id,
+      user_id,
+      order_number,
+      status,
+      payment_method,
+      total_amount,
+      depositor_name,
+      orderer_name,
+      orderer_phone,
+      recipient_name,
+      recipient_phone,
+      zip_code,
+      address,
+      detail_address,
+      request_message,
+      created_at,
+      order_items (
+        id,
+        product_id,
+        product_name_snapshot,
+        price_snapshot,
+        quantity
+      )
+    `,
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`관리자 주문 조회 실패: ${error.message}`);
+  }
+
+  return (data ?? []) as AdminOrder[];
+}
+
+const ORDER_STATUS_VALUES = [
+  "pending",
+  "paid",
+  "preparing",
+  "shipping",
+  "delivered",
+  "cancelled",
+] as const;
+
+export async function updateOrderStatus(formData: FormData) {
+  "use server";
+
+  const { supabase } = await requireAdmin();
+
+  const orderId = Number(formData.get("orderId"));
+  const status = String(formData.get("status") ?? "");
+
+  if (!orderId || !ORDER_STATUS_VALUES.includes(status as never)) {
+    throw new Error("잘못된 요청입니다.");
+  }
+
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", orderId);
+
+  if (error) {
+    throw new Error(`주문 상태 변경 실패: ${error.message}`);
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath("/mypage/orders");
+}
+
+export async function getAdminOrderById(
+  orderId: number,
+): Promise<AdminOrder | null> {
+  const { supabase } = await requireAdmin();
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      `
+      id,
+      user_id,
+      order_number,
+      status,
+      payment_method,
+      total_amount,
+      depositor_name,
+      orderer_name,
+      orderer_phone,
+      recipient_name,
+      recipient_phone,
+      zip_code,
+      address,
+      detail_address,
+      request_message,
+      created_at,
+      order_items (
+        id,
+        product_id,
+        product_name_snapshot,
+        price_snapshot,
+        quantity
+      )
+    `,
+    )
+    .eq("id", orderId)
+    .single();
+
+  if (error) {
+    throw new Error(`관리자 주문 상세 조회 실패: ${error.message}`);
+  }
+
+  return (data ?? null) as AdminOrder | null;
+}
