@@ -50,6 +50,16 @@ export default function CheckoutClient({
     memo: "",
   });
 
+  function formatPhone(value: string) {
+    const numbers = value.replace(/\D/g, "").slice(0, 11);
+
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 7) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    }
+    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+  }
+
   const totalQuantity = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity, 0),
     [items],
@@ -197,6 +207,16 @@ export default function CheckoutClient({
           !detail_address
         ) {
           toast.warning("배송지 정보를 모두 입력해주세요.", {
+            id: toastId,
+            duration: 2000,
+          });
+          return;
+        }
+
+        const phoneRegex = /^01[0-9]-\d{3,4}-\d{4}$/;
+
+        if (!phoneRegex.test(recipient_phone)) {
+          toast.warning("연락처는 010-1234-5678 형식으로 입력해주세요.", {
             id: toastId,
             duration: 2000,
           });
@@ -445,12 +465,15 @@ export default function CheckoutClient({
               />
 
               <input
-                placeholder="수령자 연락처"
+                type="tel"
+                inputMode="numeric"
+                maxLength={13}
+                placeholder="수령자 연락처 (010-1234-5678)"
                 value={newAddress.recipient_phone}
                 onChange={(e) =>
                   setNewAddress((prev) => ({
                     ...prev,
-                    recipient_phone: e.target.value,
+                    recipient_phone: formatPhone(e.target.value),
                   }))
                 }
                 className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from "next/link";
 
 export default function AdminPage() {
   return (
@@ -37,6 +37,15 @@ export default function AdminPage() {
           <h2 className="text-lg font-semibold">주문내역 관리</h2>
           <p className="mt-2 text-sm text-gray-500">
             주문내역 확인 및 주문상태 변경이 가능합니다.
+          </p>
+        </Link>
+        <Link
+          href="/admin/members"
+          className="rounded-2xl border bg-white p-6 shadow-sm transition hover:shadow"
+        >
+          <h2 className="text-lg font-semibold">회원 관리</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            회원들의 상태 관리 및 메모를 남길수 있습니다.
           </p>
         </Link>
       </div>
