@@ -37,7 +37,11 @@ export default function SocialLoginButtons({ redirectPath }: Props) {
         setLoadingProvider(null);
       }
     } catch (error) {
-      toast.error("소셜 로그인 중 오류가 발생했습니다.");
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("소셜 로그인 중 오류가 발생했습니다.");
+      }
       setLoadingProvider(null);
     }
   };

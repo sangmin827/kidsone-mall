@@ -20,7 +20,14 @@ export default function LogoutButton() {
         router.refresh();
       } catch (error) {
         toast.dismiss(loadingToastId);
-        toast.error("로그아웃 중 오류가 발생했습니다.");
+
+        console.error(error);
+
+        if (error instanceof Error) {
+          toast.error(error.message);
+        } else {
+          toast.error("로그아웃 중 오류가 발생했습니다.");
+        }
       }
     });
   };

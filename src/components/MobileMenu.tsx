@@ -30,9 +30,9 @@ export default function MobileMenu({
         className="flex flex-col gap-1 md:hidden cursor-pointer"
         aria-label="메뉴 열기"
       >
-        <span className="h-[2px] w-4 bg-gray-300" />
-        <span className="h-[2px] w-4 bg-gray-300" />
-        <span className="h-[2px] w-4 bg-gray-300" />
+        <span className="h-0.5 w-4 bg-gray-300" />
+        <span className="h-0.5 w-4 bg-gray-300" />
+        <span className="h-0.5 w-4 bg-gray-300" />
       </button>
 
       {open && (
