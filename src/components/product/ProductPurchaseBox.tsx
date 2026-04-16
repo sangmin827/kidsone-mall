@@ -5,12 +5,15 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addToCartAction } from "@/src/app/products/[slug]/actions";
+import { usePathname, useSearchParams } from "next/navigation";
+import SocialLoginButtons from "@/src/app/login/social-login-buttons";
 
 type Props = {
   productId: number;
   price: number;
   stock: number;
   cartItemCount: number;
+  isLoggedIn: boolean;
 };
 
 type ToastState = {
@@ -24,19 +27,38 @@ export default function ProductPurchaseBox({
   price,
   stock,
   cartItemCount,
+  isLoggedIn,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [quantity, setQuantity] = useState(1);
+
   const [isBuyChoiceOpen, setIsBuyChoiceOpen] = useState(false);
   const [toast, setToast] = useState<ToastState>({
     show: false,
     message: "",
     type: "success",
   });
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const getInitialQuantity = () => {
+    const qty = Number(searchParams.get("buyQty") ?? "1");
 
+    if (Number.isNaN(qty)) return 1;
+    if (qty < 1) return 1;
+    if (stock > 0 && qty > stock) return stock;
+    return qty;
+  };
+  const [quantity, setQuantity] = useState(getInitialQuantity);
   const isSoldOut = stock <= 0;
   const totalPrice = price * quantity;
+
+  const normalizeQuantity = (value: number) => {
+    if (Number.isNaN(value)) return 1;
+    if (value < 1) return 1;
+    if (stock > 0 && value > stock) return stock;
+    return value;
+  };
 
   useEffect(() => {
     if (!toast.show) return;
@@ -47,13 +69,6 @@ export default function ProductPurchaseBox({
 
     return () => clearTimeout(timer);
   }, [toast.show]);
-
-  const normalizeQuantity = (value: number) => {
-    if (Number.isNaN(value)) return 1;
-    if (value < 1) return 1;
-    if (stock > 0 && value > stock) return stock;
-    return value;
-  };
 
   const decrease = () => {
     setQuantity((prev) => Math.max(1, prev - 1));
@@ -74,6 +89,14 @@ export default function ProductPurchaseBox({
 
     const next = Number(value);
     setQuantity(normalizeQuantity(next));
+  };
+
+  const getReturnPathWithQuantity = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("buyQty", String(quantity));
+
+    const query = params.toString();
+    return query ? `${pathname}?${query}` : pathname;
   };
 
   const openToast = (message: string, type: "success" | "error") => {
@@ -107,6 +130,13 @@ export default function ProductPurchaseBox({
     );
   };
 
+  const goToGuestCheckout = () => {
+    setIsLoginPromptOpen(false);
+    router.push(
+      `/checkout?mode=single&productId=${productId}&quantity=${quantity}`,
+    );
+  };
+
   const goToCheckoutWithCart = () => {
     router.push(
       `/checkout?mode=cart_plus_current&productId=${productId}&quantity=${quantity}`,
@@ -114,6 +144,11 @@ export default function ProductPurchaseBox({
   };
 
   const handleBuyNow = () => {
+    if (!isLoggedIn) {
+      setIsLoginPromptOpen(true);
+      return;
+    }
+
     if (cartItemCount === 0) {
       goToCheckoutSingle();
       return;
@@ -153,7 +188,43 @@ export default function ProductPurchaseBox({
           </div>
         </div>
       )}
+      {isLoginPromptOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900">
+              로그인 후 구매하시겠습니까?
+            </h3>
+            <p className="mt-2 text-sm text-gray-600">
+              로그인을 하시면 주문조회가 더 쉽습니다. 로그인하시고
+              구매하시겠습니까?
+            </p>
 
+            <div className="mt-5 space-y-3">
+              <div className="rounded-xl border p-3">
+                <SocialLoginButtons
+                  redirectPath={getReturnPathWithQuantity()}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={goToGuestCheckout}
+                className="w-full rounded-xl border px-4 py-3 text-sm font-semibold hover:bg-gray-50"
+              >
+                비회원으로 구매
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsLoginPromptOpen(false)}
+                className="w-full rounded-xl border px-4 py-3 text-sm"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {isBuyChoiceOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">

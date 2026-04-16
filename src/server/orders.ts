@@ -2,6 +2,7 @@
 import { createClient } from "@/src/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { getOrCreateProfile } from "@/src/server/profile";
+import { createAdminClient } from "@/src/lib/supabase/admin";
 
 export type MyOrderItem = {
   id: number;
@@ -392,10 +393,8 @@ async function createMemberOrder(
   return order;
 }
 
-async function createGuestOrder(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  input: CheckoutInput,
-) {
+async function createGuestOrder(input: CheckoutInput) {
+  const supabase = createAdminClient();
   const normalized = normalizeCommonOrderInput(input);
 
   const orderer_name = input.orderer_name?.trim() ?? "";
@@ -554,7 +553,7 @@ export async function createOrder(input: CheckoutInput) {
     return createMemberOrder(supabase, user.id, input);
   }
 
-  return createGuestOrder(supabase, input);
+  return createGuestOrder(input);
 }
 
 // 기존 코드와 호환용으로 남겨둘 수 있음
@@ -577,7 +576,7 @@ export async function getGuestOrderByOrderNumberAndPhone(
   orderNumber: string,
   ordererPhone: string,
 ): Promise<GuestLookupOrder | null> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const normalizedOrderNumber = orderNumber.trim();
   const normalizedPhone = ordererPhone.trim();

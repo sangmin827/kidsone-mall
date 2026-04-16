@@ -4,7 +4,11 @@ import { createClient } from "@/src/lib/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export default function SocialLoginButtons() {
+type Props = {
+  redirectPath?: string;
+};
+
+export default function SocialLoginButtons({ redirectPath }: Props) {
   const supabase = createClient();
   const [loadingProvider, setLoadingProvider] = useState<
     "google" | "kakao" | null
@@ -22,7 +26,9 @@ export default function SocialLoginButtons() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback${
+            redirectPath ? `?next=${encodeURIComponent(redirectPath)}` : ""
+          }`,
         },
       });
 

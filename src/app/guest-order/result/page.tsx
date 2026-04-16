@@ -1,5 +1,13 @@
 import { getGuestOrderByOrderNumberAndPhone } from "@/src/server/orders";
 
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  pending: "입금 대기",
+  paid: "결제 완료",
+  preparing: "상품 준비중",
+  shipping: "배송중",
+  delivered: "배송 완료",
+  cancelled: "주문 취소",
+};
 export default async function GuestOrderResultPage({
   searchParams,
 }: {
@@ -54,7 +62,8 @@ export default async function GuestOrderResultPage({
                 {order.order_number}
               </p>
               <p className="mt-2">
-                <span className="font-semibold">주문상태:</span> {order.status}
+                <span className="font-semibold">주문상태:</span>{" "}
+                {ORDER_STATUS_LABEL[order.status] ?? order.status}
               </p>
               <p className="mt-2">
                 <span className="font-semibold">주문자:</span>{" "}

@@ -23,6 +23,9 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const error = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
+  const next = searchParams.get("next");
+
+  const safeNext = next && next.startsWith("/") ? next : "/";
 
   if (error) {
     const message = getErrorMessage(error, errorDescription);
@@ -48,5 +51,5 @@ export async function GET(request: Request) {
     );
   }
 
-  return NextResponse.redirect(`${origin}/?auth=logged-in`);
+  return NextResponse.redirect(`${origin}${safeNext}`);
 }

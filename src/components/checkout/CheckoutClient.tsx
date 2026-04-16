@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,6 +10,7 @@ import type {
   SavedAddress,
 } from "@/src/server/checkout";
 import { toast } from "sonner";
+import { addToCartAction } from "@/src/app/products/[slug]/actions";
 
 type Props = {
   initialItems: CheckoutItem[];
@@ -30,6 +31,7 @@ export default function CheckoutClient({
   const [saveNewAddress, setSaveNewAddress] = useState(false);
   const [saveAsDefault, setSaveAsDefault] = useState(false);
   const [isOrdering, setIsOrdering] = useState(false);
+  const [isCartPending, startTransition] = useTransition();
   const router = useRouter();
 
   const defaultAddress =
@@ -46,6 +48,23 @@ export default function CheckoutClient({
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
     defaultAddress?.id ?? addresses[0]?.id ?? null,
   );
+
+  const handleAddSingleItemToCart = (productId: number, quantity: number) => {
+    const formData = new FormData();
+    formData.set("productId", String(productId));
+    formData.set("quantity", String(quantity));
+
+    startTransition(async () => {
+      const result = await addToCartAction(formData);
+
+      if (result.ok) {
+        toast.success(result.message);
+        router.refresh();
+      } else {
+        toast.error(result.message);
+      }
+    });
+  };
 
   const detailAddressRef = useRef<HTMLInputElement>(null);
 
@@ -478,14 +497,31 @@ export default function CheckoutClient({
                           +
                         </button>
                       </div>
+                      <div>
+                        {!item.from_cart && isLoggedIn && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleAddSingleItemToCart(
+                                item.product_id,
+                                item.quantity,
+                              )
+                            }
+                            disabled={isCartPending}
+                            className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50 mr-3"
+                          >
+                            {isCartPending ? "담는 중..." : "장바구니 담기"}
+                          </button>
+                        )}
 
-                      <button
-                        type="button"
-                        onClick={() => removeItem(item.product_id)}
-                        className="rounded-lg border px-3 py-2 text-sm text-red-500 hover:bg-red-50"
-                      >
-                        삭제
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => removeItem(item.product_id)}
+                          className="rounded-lg border px-3 py-2 text-sm text-red-500 hover:bg-red-50"
+                        >
+                          삭제
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -537,6 +573,9 @@ export default function CheckoutClient({
                 }
                 className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
               />
+              <p className="text-xs text-gray-500">
+                해당 이메일로 주문내역이 발송됩니다
+              </p>
             </div>
           </section>
         )}

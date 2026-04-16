@@ -1,8 +1,8 @@
-import Image from 'next/image';
-import { notFound } from 'next/navigation';
-import { createClient } from '@/src/lib/supabase/server';
-import ProductPurchaseBox from '@/src/components/product/ProductPurchaseBox';
-import { getMyCart } from '@/src/server/cart';
+import Image from "next/image";
+import { notFound } from "next/navigation";
+import { createClient } from "@/src/lib/supabase/server";
+import ProductPurchaseBox from "@/src/components/product/ProductPurchaseBox";
+import { getMyCart } from "@/src/server/cart";
 
 type ProductImage = {
   image_url: string;
@@ -25,7 +25,7 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('products')
+    .from("products")
     .select(
       `
       id,
@@ -42,8 +42,8 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
       )
       `,
     )
-    .eq('slug', slug)
-    .eq('is_active', true)
+    .eq("slug", slug)
+    .eq("is_active", true)
     .single();
 
   if (error || !data) {
@@ -59,8 +59,10 @@ export default async function ProductDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const supabase = await createClient();
 
-  const [product, cartResult] = await Promise.all([
+  const [{ data: authData }, product, cartResult] = await Promise.all([
+    supabase.auth.getUser(),
     getProductBySlug(slug),
     getMyCart(),
   ]);
@@ -70,6 +72,7 @@ export default async function ProductDetailPage({
   }
 
   const cartItemCount = cartResult.items.length;
+  const isLoggedIn = !!authData.user;
 
   const images =
     product.product_images?.sort(
@@ -79,7 +82,7 @@ export default async function ProductDetailPage({
   const mainImage =
     images.find((img) => img.is_thumbnail)?.image_url ??
     images[0]?.image_url ??
-    '/placeholder.png';
+    "/placeholder.png";
 
   return (
     <main className="min-h-screen bg-white">
@@ -140,6 +143,7 @@ export default async function ProductDetailPage({
             price={product.price}
             stock={product.stock ?? 0}
             cartItemCount={cartItemCount}
+            isLoggedIn={isLoggedIn}
           />
 
           {product.description && (
