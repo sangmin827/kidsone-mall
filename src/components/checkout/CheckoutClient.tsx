@@ -15,6 +15,7 @@ type Props = {
   initialItems: CheckoutItem[];
   addresses: SavedAddress[];
   bankAccounts: BankAccount[];
+  isLoggedIn: boolean;
 };
 
 type AddressMode = "new" | "default" | "saved";
@@ -23,6 +24,7 @@ export default function CheckoutClient({
   initialItems,
   addresses,
   bankAccounts,
+  isLoggedIn,
 }: Props) {
   const [items, setItems] = useState<CheckoutItem[]>(initialItems);
   const [saveNewAddress, setSaveNewAddress] = useState(false);
@@ -33,7 +35,13 @@ export default function CheckoutClient({
   const defaultAddress =
     addresses.find((address) => address.is_default) ?? null;
   const [addressMode, setAddressMode] = useState<AddressMode>(
-    defaultAddress ? "default" : addresses.length > 0 ? "saved" : "new",
+    !isLoggedIn
+      ? "new"
+      : defaultAddress
+        ? "default"
+        : addresses.length > 0
+          ? "saved"
+          : "new",
   );
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
     defaultAddress?.id ?? addresses[0]?.id ?? null,
@@ -44,10 +52,17 @@ export default function CheckoutClient({
   const [newAddress, setNewAddress] = useState({
     recipient_name: "",
     recipient_phone: "",
+    recipient_phone_extra: "",
     postal_code: "",
     address_main: "",
     address_detail: "",
     memo: "",
+  });
+
+  const [orderer, setOrderer] = useState({
+    orderer_name: "",
+    orderer_phone: "",
+    orderer_email: "",
   });
 
   function formatPhone(value: string) {
@@ -186,6 +201,7 @@ export default function CheckoutClient({
 
       let recipient_name = "";
       let recipient_phone = "";
+      let recipient_phone_extra = "";
       let zip_code = "";
       let address = "";
       let detail_address = "";
@@ -194,6 +210,7 @@ export default function CheckoutClient({
       if (addressMode === "new") {
         recipient_name = newAddress.recipient_name.trim();
         recipient_phone = newAddress.recipient_phone.trim();
+        recipient_phone_extra = newAddress.recipient_phone_extra.trim();
         zip_code = newAddress.postal_code.trim();
         address = newAddress.address_main.trim();
         detail_address = newAddress.address_detail.trim();
@@ -222,6 +239,44 @@ export default function CheckoutClient({
           });
           return;
         }
+        if (recipient_phone_extra && !phoneRegex.test(recipient_phone_extra)) {
+          toast.warning(
+            "수령자 연락처 2는 010-1234-5678 형식으로 입력해주세요.",
+            {
+              id: toastId,
+              duration: 2000,
+            },
+          );
+          return;
+        }
+
+        if (!isLoggedIn) {
+          const orderer_name = orderer.orderer_name.trim();
+          const orderer_phone = orderer.orderer_phone.trim();
+          const orderer_email = orderer.orderer_email.trim();
+
+          if (!orderer_name || !orderer_phone || !orderer_email) {
+            toast.warning(
+              "비회원 주문자는 이름, 연락처, 이메일을 모두 입력해주세요.",
+              {
+                id: toastId,
+                duration: 2000,
+              },
+            );
+            return;
+          }
+
+          if (!phoneRegex.test(orderer_phone)) {
+            toast.warning(
+              "주문자 연락처는 010-1234-5678 형식으로 입력해주세요.",
+              {
+                id: toastId,
+                duration: 2000,
+              },
+            );
+            return;
+          }
+        }
 
         if (saveNewAddress) {
           const addressRes = await fetch("/api/addresses", {
@@ -232,10 +287,20 @@ export default function CheckoutClient({
             body: JSON.stringify({
               recipient_name,
               recipient_phone,
-              postal_code: zip_code,
-              address_main: address,
-              address_detail: detail_address,
-              memo: request_message,
+              recipient_phone_extra,
+              zip_code,
+              address,
+              detail_address,
+              request_message,
+              orderer_name: isLoggedIn
+                ? undefined
+                : orderer.orderer_name.trim(),
+              orderer_phone: isLoggedIn
+                ? undefined
+                : orderer.orderer_phone.trim(),
+              orderer_email: isLoggedIn
+                ? undefined
+                : orderer.orderer_email.trim(),
             }),
           });
 
@@ -276,10 +341,20 @@ export default function CheckoutClient({
         body: JSON.stringify({
           recipient_name,
           recipient_phone,
+          recipient_phone_extra,
           zip_code,
           address,
           detail_address,
           request_message,
+          orderer_name: isLoggedIn ? undefined : orderer.orderer_name.trim(),
+          orderer_phone: isLoggedIn ? undefined : orderer.orderer_phone.trim(),
+          orderer_email: isLoggedIn ? undefined : orderer.orderer_email.trim(),
+          items: !isLoggedIn
+            ? items.map((item) => ({
+                product_id: item.product_id,
+                quantity: item.quantity,
+              }))
+            : undefined,
         }),
       });
 
@@ -290,7 +365,13 @@ export default function CheckoutClient({
       }
 
       toast.success("주문이 완료되었습니다!", { id: toastId, duration: 1500 });
-      router.push("/mypage/orders");
+      if (isLoggedIn) {
+        router.push("/mypage/orders");
+      } else {
+        router.push(
+          `/guest-order/complete?orderNumber=${encodeURIComponent(orderData.order.order_number)}&phone=${encodeURIComponent(orderer.orderer_phone.trim())}`,
+        );
+      }
       router.refresh();
     } catch (error) {
       toast.error(
@@ -412,44 +493,92 @@ export default function CheckoutClient({
             )}
           </div>
         </section>
+        {!isLoggedIn && (
+          <section className="rounded-2xl border bg-white p-6">
+            <h2 className="text-lg font-bold">주문자 정보</h2>
 
+            <div className="mt-4 space-y-3">
+              <input
+                placeholder="주문자 이름"
+                value={orderer.orderer_name}
+                onChange={(e) =>
+                  setOrderer((prev) => ({
+                    ...prev,
+                    orderer_name: e.target.value,
+                  }))
+                }
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+              />
+
+              <input
+                type="tel"
+                inputMode="numeric"
+                maxLength={13}
+                placeholder="주문자 연락처 (010-1234-5678)"
+                value={orderer.orderer_phone}
+                onChange={(e) =>
+                  setOrderer((prev) => ({
+                    ...prev,
+                    orderer_phone: formatPhone(e.target.value),
+                  }))
+                }
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+              />
+
+              <input
+                type="email"
+                placeholder="주문자 이메일"
+                value={orderer.orderer_email}
+                onChange={(e) =>
+                  setOrderer((prev) => ({
+                    ...prev,
+                    orderer_email: e.target.value,
+                  }))
+                }
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+          </section>
+        )}
         <section className="rounded-2xl border bg-white p-6">
-          <h2 className="text-lg font-bold">배송지 선택</h2>
+          <h2 className="text-lg font-bold">배송지 정보</h2>
+          {isLoggedIn && (
+            <div className="space-y-2">
+              <div className="mt-4 space-y-3">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="addressMode"
+                    checked={addressMode === "new"}
+                    onChange={() => setAddressMode("new")}
+                  />
+                  <span className="text-sm">새로운 주소지 입력</span>
+                </label>
 
-          <div className="mt-4 space-y-3">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="addressMode"
-                checked={addressMode === "new"}
-                onChange={() => setAddressMode("new")}
-              />
-              <span className="text-sm">새로운 주소지 입력</span>
-            </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="addressMode"
+                    checked={addressMode === "default"}
+                    onChange={() => setAddressMode("default")}
+                    disabled={!defaultAddress}
+                  />
+                  <span className="text-sm">기본 주소지 선택</span>
+                </label>
 
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="addressMode"
-                checked={addressMode === "default"}
-                onChange={() => setAddressMode("default")}
-                disabled={!defaultAddress}
-              />
-              <span className="text-sm">기본 주소지 선택</span>
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="addressMode"
-                checked={addressMode === "saved"}
-                onChange={() => setAddressMode("saved")}
-                disabled={addresses.length === 0}
-              />
-              <span className="text-sm">저장된 주소지에서 선택</span>
-            </label>
-          </div>
-
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="addressMode"
+                    checked={addressMode === "saved"}
+                    onChange={() => setAddressMode("saved")}
+                    disabled={addresses.length === 0}
+                  />
+                  <span className="text-sm">저장된 주소지에서 선택</span>
+                </label>
+              </div>
+            </div>
+          )}
           {addressMode === "new" && (
             <div className="mt-5 space-y-3">
               <input
@@ -474,6 +603,20 @@ export default function CheckoutClient({
                   setNewAddress((prev) => ({
                     ...prev,
                     recipient_phone: formatPhone(e.target.value),
+                  }))
+                }
+                className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+              />
+              <input
+                type="tel"
+                inputMode="numeric"
+                maxLength={13}
+                placeholder="수령자 연락처 2 (선택)"
+                value={newAddress.recipient_phone_extra}
+                onChange={(e) =>
+                  setNewAddress((prev) => ({
+                    ...prev,
+                    recipient_phone_extra: formatPhone(e.target.value),
                   }))
                 }
                 className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
@@ -526,34 +669,38 @@ export default function CheckoutClient({
                 placeholder="배송 메시지 or 기타사항"
                 className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
               />
-              <div className="space-y-2">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={saveNewAddress}
-                    disabled={addresses.length >= 3}
-                    onChange={(e) => setSaveNewAddress(e.target.checked)}
-                  />
-                  <span className="text-sm">이 주소를 주소록에 저장</span>
-                </label>
+              {isLoggedIn && (
+                <div className="space-y-2">
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={saveNewAddress}
+                        disabled={addresses.length >= 3}
+                        onChange={(e) => setSaveNewAddress(e.target.checked)}
+                      />
+                      <span className="text-sm">이 주소를 주소록에 저장</span>
+                    </label>
 
-                {addresses.length >= 3 && (
-                  <p className="text-sm text-red-500">
-                    배송지는 최대 3개까지만 저장할 수 있습니다.
-                  </p>
-                )}
+                    {addresses.length >= 3 && (
+                      <p className="text-sm text-red-500">
+                        배송지는 최대 3개까지만 저장할 수 있습니다.
+                      </p>
+                    )}
 
-                {saveNewAddress && (
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={saveAsDefault}
-                      onChange={(e) => setSaveAsDefault(e.target.checked)}
-                    />
-                    <span className="text-sm">기본 배송지로 저장</span>
-                  </label>
-                )}
-              </div>
+                    {saveNewAddress && (
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={saveAsDefault}
+                          onChange={(e) => setSaveAsDefault(e.target.checked)}
+                        />
+                        <span className="text-sm">기본 배송지로 저장</span>
+                      </label>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

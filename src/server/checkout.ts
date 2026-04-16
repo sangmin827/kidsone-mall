@@ -1,5 +1,5 @@
-import { createClient } from '@/src/lib/supabase/server';
-import { getMyCart } from '@/src/server/cart';
+import { createClient } from "@/src/lib/supabase/server";
+import { getMyCart } from "@/src/server/cart";
 
 export type CheckoutItem = {
   product_id: number;
@@ -17,6 +17,7 @@ export type SavedAddress = {
   id: number;
   recipient_name: string;
   recipient_phone: string;
+  recipient_phone_extra: string | null;
   zip_code: string;
   address: string;
   detail_address: string | null;
@@ -37,7 +38,7 @@ async function getProductForCheckout(
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('products')
+    .from("products")
     .select(
       `
       id,
@@ -53,7 +54,7 @@ async function getProductForCheckout(
       )
       `,
     )
-    .eq('id', productId)
+    .eq("id", productId)
     .single();
 
   if (error || !data || !data.is_active) {
@@ -107,13 +108,13 @@ export async function getCheckoutItems(params: {
 }): Promise<CheckoutItem[]> {
   const { mode, productId, quantity } = params;
 
-  if (mode === 'single') {
+  if (mode === "single") {
     if (!productId || !quantity) return [];
     const item = await getProductForCheckout(productId, quantity);
     return item ? [item] : [];
   }
 
-  if (mode === 'cart_plus_current') {
+  if (mode === "cart_plus_current") {
     const { items } = await getMyCart();
 
     const cartItems: CheckoutItem[] = items
@@ -186,21 +187,22 @@ export async function getMyAddresses(): Promise<SavedAddress[]> {
   if (!user) return [];
 
   const { data, error } = await supabase
-    .from('shipping_addresses')
+    .from("shipping_addresses")
     .select(
       `
       id,
       recipient_name,
       recipient_phone,
+      recipient_phone_extra,
       postal_code,
       address_main,
       address_detail,
       is_default
       `,
     )
-    .eq('user_id', user.id)
-    .order('is_default', { ascending: false })
-    .order('id', { ascending: false });
+    .eq("user_id", user.id)
+    .order("is_default", { ascending: false })
+    .order("id", { ascending: false });
 
   if (error || !data) {
     return [];
@@ -210,7 +212,8 @@ export async function getMyAddresses(): Promise<SavedAddress[]> {
     id: item.id,
     recipient_name: item.recipient_name,
     recipient_phone: item.recipient_phone,
-    zip_code: item.postal_code ?? '',
+    recipient_phone_extra: item.recipient_phone_extra ?? null,
+    zip_code: item.postal_code ?? "",
     address: item.address_main,
     detail_address: item.address_detail,
     is_default: item.is_default,
@@ -221,10 +224,10 @@ export async function getActiveBankAccounts(): Promise<BankAccount[]> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from('bank_accounts')
-    .select('id, bank_name, account_number, account_holder')
-    .eq('is_active', true)
-    .order('id', { ascending: true });
+    .from("bank_accounts")
+    .select("id, bank_name, account_number, account_holder")
+    .eq("is_active", true)
+    .order("id", { ascending: true });
 
   if (error || !data) {
     return [];

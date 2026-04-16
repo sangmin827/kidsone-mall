@@ -1,18 +1,23 @@
 import { NextResponse } from "next/server";
-import { createOrderFromCart } from "@/src/server/orders";
+import { createOrder } from "@/src/server/orders";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const order = await createOrderFromCart({
+    const order = await createOrder({
       recipient_name: body.recipient_name,
       recipient_phone: body.recipient_phone,
+      recipient_phone_extra: body.recipient_phone_extra,
       zip_code: body.zip_code,
       address: body.address,
       detail_address: body.detail_address,
       request_message: body.request_message,
       depositor_name: body.depositor_name,
+      orderer_name: body.orderer_name,
+      orderer_phone: body.orderer_phone,
+      orderer_email: body.orderer_email,
+      items: body.items,
     });
 
     return NextResponse.json({

@@ -1,46 +1,63 @@
 "use client";
 
 import { createClient } from "@/src/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function SocialLoginButtons() {
   const supabase = createClient();
-  const router = useRouter();
+  const [loadingProvider, setLoadingProvider] = useState<
+    "google" | "kakao" | null
+  >(null);
 
-  const signInWithGoogle = async () => {
-    router.refresh();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-  };
+  const handleSocialLogin = async (provider: "google" | "kakao") => {
+    try {
+      setLoadingProvider(provider);
+      toast.message(
+        provider === "google"
+          ? "구글 로그인 페이지로 이동 중입니다."
+          : "카카오 로그인 페이지로 이동 중입니다.",
+      );
 
-  const signInWithKakao = async () => {
-    router.refresh();
-    await supabase.auth.signInWithOAuth({
-      provider: "kakao",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        toast.error(error.message);
+        setLoadingProvider(null);
+      }
+    } catch (error) {
+      toast.error("소셜 로그인 중 오류가 발생했습니다.");
+      setLoadingProvider(null);
+    }
   };
 
   return (
     <div className="space-y-3">
       <button
-        onClick={signInWithGoogle}
-        className="w-full cursor-pointer rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium transition hover:bg-gray-50"
+        type="button"
+        onClick={() => handleSocialLogin("google")}
+        disabled={loadingProvider !== null}
+        className="w-full cursor-pointer rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Google로 로그인
+        {loadingProvider === "google"
+          ? "Google 로그인 이동 중..."
+          : "Google로 로그인"}
       </button>
 
       <button
-        onClick={signInWithKakao}
-        className="w-full cursor-pointer rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium transition hover:bg-gray-50"
+        type="button"
+        onClick={() => handleSocialLogin("kakao")}
+        disabled={loadingProvider !== null}
+        className="w-full cursor-pointer rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Kakao로 로그인
+        {loadingProvider === "kakao"
+          ? "Kakao 로그인 이동 중..."
+          : "Kakao로 로그인"}
       </button>
     </div>
   );

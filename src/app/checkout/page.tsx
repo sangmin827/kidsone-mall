@@ -2,8 +2,9 @@ import {
   getActiveBankAccounts,
   getCheckoutItems,
   getMyAddresses,
-} from '@/src/server/checkout';
-import CheckoutClient from '@/src/components/checkout/CheckoutClient';
+} from "@/src/server/checkout";
+import CheckoutClient from "@/src/components/checkout/CheckoutClient";
+import { createClient } from "@/src/lib/supabase/server";
 
 export default async function CheckoutPage({
   searchParams,
@@ -15,6 +16,11 @@ export default async function CheckoutPage({
   }>;
 }) {
   const { mode, productId, quantity } = await searchParams;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const items = await getCheckoutItems({
     mode,
@@ -33,6 +39,7 @@ export default async function CheckoutPage({
         initialItems={items}
         addresses={addresses}
         bankAccounts={bankAccounts}
+        isLoggedIn={!!user}
       />
     </main>
   );

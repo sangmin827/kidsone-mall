@@ -8,6 +8,7 @@ export async function POST(request: Request) {
     const formData = new FormData();
     formData.append("recipient_name", body.recipient_name ?? "");
     formData.append("recipient_phone", body.recipient_phone ?? "");
+    formData.append("recipient_phone_extra", body.recipient_phone_extra ?? "");
     formData.append("postal_code", body.postal_code ?? "");
     formData.append("address_main", body.address_main ?? "");
     formData.append("address_detail", body.address_detail ?? "");

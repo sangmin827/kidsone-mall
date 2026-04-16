@@ -9,6 +9,7 @@ export type ShippingAddress = {
   user_id: string;
   recipient_name: string;
   recipient_phone: string;
+  recipient_phone_extra: string | null;
   postal_code: string | null;
   address_main: string;
   address_detail: string | null;
@@ -37,6 +38,7 @@ export async function getMyAddresses(): Promise<ShippingAddress[]> {
       user_id,
       recipient_name,
       recipient_phone,
+      recipient_phone_extra,
       postal_code,
       address_main,
       address_detail,
@@ -83,6 +85,9 @@ export async function createMyAddress(formData: FormData) {
 
   const recipient_name = String(formData.get("recipient_name") ?? "").trim();
   const recipient_phone = String(formData.get("recipient_phone") ?? "").trim();
+  const recipient_phone_extra = String(
+    formData.get("recipient_phone_extra") ?? "",
+  ).trim();
   const postal_code = String(formData.get("postal_code") ?? "").trim();
   const address_main = String(formData.get("address_main") ?? "").trim();
   const address_detail = String(formData.get("address_detail") ?? "").trim();
@@ -100,10 +105,21 @@ export async function createMyAddress(formData: FormData) {
     );
   }
 
+  const phoneRegex = /^01[0-9]-\d{3,4}-\d{4}$/;
+
+  if (!phoneRegex.test(recipient_phone)) {
+    throw new Error("연락처 1은 010-1234-5678 형식으로 입력해주세요.");
+  }
+
+  if (recipient_phone_extra && !phoneRegex.test(recipient_phone_extra)) {
+    throw new Error("연락처 2는 010-1234-5678 형식으로 입력해주세요.");
+  }
+
   const { error } = await supabase.from("shipping_addresses").insert({
     user_id: user.id,
     recipient_name,
     recipient_phone,
+    recipient_phone_extra: recipient_phone_extra || null,
     postal_code: postal_code || null,
     address_main,
     address_detail: address_detail || null,

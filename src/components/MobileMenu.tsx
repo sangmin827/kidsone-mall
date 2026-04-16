@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { ROUTES } from '@/src/constants/routes';
+import { useState } from "react";
+import Link from "next/link";
 
 type Category = {
   id: number;
@@ -13,7 +12,7 @@ type Category = {
 type MobileMenuProps = {
   categories: Category[];
   isLoggedIn: boolean;
-  logoutAction: () => Promise<void>;
+  logoutAction: () => Promise<unknown>;
 };
 
 export default function MobileMenu({
@@ -45,7 +44,7 @@ export default function MobileMenu({
 
       <aside
         className={`fixed right-0 top-0 z-50 h-full w-72 bg-white shadow-xl transition-transform duration-300 md:hidden ${
-          open ? 'translate-x-0' : 'translate-x-full'
+          open ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="flex h-full flex-col">
@@ -76,6 +75,14 @@ export default function MobileMenu({
                     </Link>
 
                     <Link
+                      href="/mypage/orders"
+                      onClick={() => setOpen(false)}
+                      className="text-gray-800"
+                    >
+                      주문조회
+                    </Link>
+
+                    <Link
                       href="/mypage"
                       onClick={() => setOpen(false)}
                       className="text-gray-800"
@@ -83,7 +90,11 @@ export default function MobileMenu({
                       마이페이지
                     </Link>
 
-                    <form action={logoutAction}>
+                    <form
+                      action={async () => {
+                        await logoutAction();
+                      }}
+                    >
                       <button
                         type="submit"
                         className="cursor-pointer text-left text-gray-800"
