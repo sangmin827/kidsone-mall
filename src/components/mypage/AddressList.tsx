@@ -1,3 +1,5 @@
+//src/components/myage/AddressList.tsx
+
 import type { ShippingAddress } from "@/src/server/addresses";
 import { deleteMyAddress } from "@/src/server/addresses";
 

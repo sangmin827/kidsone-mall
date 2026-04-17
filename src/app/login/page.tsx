@@ -1,31 +1,24 @@
-import SocialLoginButtons from "./social-login-buttons";
+import { redirect } from "next/navigation";
 
 type LoginPageProps = {
   searchParams: Promise<{
+    next?: string;
     error?: string;
   }>;
 };
 
+/**
+ * 로그인 UI 는 전역 <LoginModal /> 로 이관됨.
+ * 이 라우트로 들어오면 홈으로 보내면서 모달을 띄운다.
+ */
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const params = await searchParams;
-  const error = params.error;
+  const { next } = await searchParams;
 
-  return (
-    <main className="flex min-h-[70vh] items-center justify-center px-6">
-      <div className="w-full max-w-md space-y-4 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold">로그인</h1>
-        <p className="text-sm text-gray-600">
-          구글 또는 카카오 계정으로 로그인하세요.
-        </p>
+  const params = new URLSearchParams();
+  params.set("login", "1");
+  if (next) {
+    params.set("next", next);
+  }
 
-        {error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
-          </div>
-        ) : null}
-
-        <SocialLoginButtons />
-      </div>
-    </main>
-  );
+  redirect(`/?${params.toString()}`);
 }

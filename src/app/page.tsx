@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Footer from "../components/layout/Footer";
 
 export default function HomePage() {
   return (
@@ -26,18 +27,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* 푸터 */}
-      <footer className="border-t border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-8 text-xs text-gray-500">
-          <p>
-            (주)키즈원 대표 : 서대웅 사업자등록번호 : ~~~ 통신판매업신고번호 :
-            ~~~~ 기타 정보 ~~~~ TEL : 010-2459-0479 FAX : ~~~~ 주소 : 광주광역시
-            광산구 상무대로419번길 30-2 넘버원체육교실&이벤트 <br />
-            <br />© 2026 No.1KidsSports&Event|㈜KidsOne. All rights reserved.
-          </p>
-        </div>
-      </footer>
     </main>
   );
 }

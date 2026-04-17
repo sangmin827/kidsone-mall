@@ -18,6 +18,7 @@ export async function POST(request: Request) {
       orderer_phone: body.orderer_phone,
       orderer_email: body.orderer_email,
       items: body.items,
+      clear_cart: body.clear_cart,
     });
 
     return NextResponse.json({

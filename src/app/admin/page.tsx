@@ -48,6 +48,26 @@ export default function AdminPage() {
             회원들의 상태 관리 및 메모를 남길수 있습니다.
           </p>
         </Link>
+
+        <Link
+          href="/admin/activity-logs"
+          className="rounded-2xl border bg-white p-6 shadow-sm transition hover:shadow"
+        >
+          <h2 className="text-lg font-semibold">활동 로그</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            상품/카테고리/주문/회원 관리 작업 내역을 시간순으로 확인합니다.
+          </p>
+        </Link>
+
+        <Link
+          href="/admin/purchase-requests"
+          className="rounded-2xl border bg-white p-6 shadow-sm transition hover:shadow"
+        >
+          <h2 className="text-lg font-semibold">구매 희망 요청</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            품절 상품에 대해 고객이 남긴 재입고 안내 신청 내역을 확인합니다.
+          </p>
+        </Link>
       </div>
     </div>
   );

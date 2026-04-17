@@ -1,4 +1,5 @@
 import { createClient } from "@/src/lib/supabase/server";
+import { getOrCreateProfile, needsOnboarding } from "@/src/server/profile";
 import { NextResponse } from "next/server";
 
 function getErrorMessage(
@@ -49,6 +50,31 @@ export async function GET(request: Request) {
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(exchangeError.message)}`,
     );
+  }
+
+  // 세션 교환 성공 → 프로필 확보 + 온보딩 필요 여부 확인
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+
+  if (user) {
+    try {
+      const profile = await getOrCreateProfile(user);
+
+      if (needsOnboarding(profile)) {
+        const onboardingUrl = `${origin}/onboarding?next=${encodeURIComponent(
+          safeNext,
+        )}`;
+        return NextResponse.redirect(onboardingUrl);
+      }
+    } catch (profileError) {
+      const message =
+        profileError instanceof Error
+          ? profileError.message
+          : "프로필 처리 중 오류가 발생했습니다.";
+      return NextResponse.redirect(
+        `${origin}/login?error=${encodeURIComponent(message)}`,
+      );
+    }
   }
 
   return NextResponse.redirect(`${origin}${safeNext}`);

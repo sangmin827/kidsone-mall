@@ -40,6 +40,7 @@ export default async function CheckoutPage({
         addresses={addresses}
         bankAccounts={bankAccounts}
         isLoggedIn={!!user}
+        mode={mode}
       />
     </main>
   );

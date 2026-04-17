@@ -80,6 +80,10 @@ export default async function GuestOrderResultPage({
                 </p>
               )}
               <p className="mt-2">
+                <span className="font-semibold">입금자명:</span>{" "}
+                {order.depositor_name ?? "미입력"}
+              </p>
+              <p className="mt-2">
                 <span className="font-semibold">총 결제금액:</span>{" "}
                 {order.total_amount.toLocaleString()}원
               </p>

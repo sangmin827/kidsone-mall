@@ -1,5 +1,13 @@
-import { revalidatePath } from 'next/cache';
-import { createClient } from '@/src/lib/supabase/server';
+import { requireAdmin } from '@/src/server/admin-auth';
+
+export type AdminProductImage = {
+  id: number;
+  product_id: number;
+  image_url: string;
+  is_thumbnail: boolean;
+  sort_order: number;
+  storage_path: string | null;
+};
 
 export type AdminProduct = {
   id: number;
@@ -7,16 +15,30 @@ export type AdminProduct = {
   slug: string;
   price: number;
   stock: number;
+  short_description: string | null;
+  description: string | null;
+  category_id: number | null;
   is_active: boolean;
+  is_new: boolean;
+  top10_rank: number | null;
+  is_sold_out: boolean;
+  hide_when_sold_out: boolean;
   created_at: string;
+  images?: AdminProductImage[];
 };
 
+const PRODUCT_COLUMNS =
+  'id, name, slug, price, stock, short_description, description, category_id, is_active, is_new, top10_rank, is_sold_out, hide_when_sold_out, created_at';
+
+const PRODUCT_IMAGE_COLUMNS =
+  'id, product_id, image_url, is_thumbnail, sort_order, storage_path';
+
 export async function getAdminProducts(): Promise<AdminProduct[]> {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, slug, price, stock, is_active, created_at')
+    .select(PRODUCT_COLUMNS)
     .order('id', { ascending: false });
 
   if (error) {
@@ -29,114 +51,44 @@ export async function getAdminProducts(): Promise<AdminProduct[]> {
 export async function getAdminProductById(
   id: number,
 ): Promise<AdminProduct | null> {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, slug, price, stock, is_active, created_at')
+    .select(PRODUCT_COLUMNS)
     .eq('id', id)
     .single();
 
-  if (error) {
+  if (error || !data) {
     return null;
   }
 
-  return data as AdminProduct;
+  const { data: images } = await supabase
+    .from('product_images')
+    .select(PRODUCT_IMAGE_COLUMNS)
+    .eq('product_id', id)
+    .order('sort_order', { ascending: true });
+
+  return {
+    ...(data as Omit<AdminProduct, 'images'>),
+    images: (images ?? []) as AdminProductImage[],
+  };
 }
 
-export async function createProduct(formData: FormData) {
-  'use server';
+export async function getAdminProductImages(
+  productId: number,
+): Promise<AdminProductImage[]> {
+  const { supabase } = await requireAdmin();
 
-  const name = String(formData.get('name') ?? '').trim();
-  const slug = String(formData.get('slug') ?? '').trim();
-  const price = Number(formData.get('price') ?? 0);
-  const stock = Number(formData.get('stock') ?? 0);
-  const isActive = formData.get('is_active') === 'on';
-
-  if (!name) {
-    throw new Error('상품명을 입력해주세요.');
-  }
-
-  if (!slug) {
-    throw new Error('슬러그를 입력해주세요.');
-  }
-
-  const supabase = await createClient();
-
-  const { error } = await supabase.from('products').insert({
-    name,
-    slug,
-    price: Number.isNaN(price) ? 0 : price,
-    stock: Number.isNaN(stock) ? 0 : stock,
-    is_active: isActive,
-  });
+  const { data, error } = await supabase
+    .from('product_images')
+    .select(PRODUCT_IMAGE_COLUMNS)
+    .eq('product_id', productId)
+    .order('sort_order', { ascending: true });
 
   if (error) {
-    throw new Error(`상품 등록 실패: ${error.message}`);
+    throw new Error(`상품 이미지 조회 실패: ${error.message}`);
   }
 
-  revalidatePath('/admin/products');
-}
-
-export async function updateProduct(formData: FormData) {
-  'use server';
-
-  const id = Number(formData.get('id'));
-  const name = String(formData.get('name') ?? '').trim();
-  const slug = String(formData.get('slug') ?? '').trim();
-  const price = Number(formData.get('price') ?? 0);
-  const stock = Number(formData.get('stock') ?? 0);
-  const isActive = formData.get('is_active') === 'on';
-
-  if (!id) {
-    throw new Error('상품 ID가 올바르지 않습니다.');
-  }
-
-  if (!name) {
-    throw new Error('상품명을 입력해주세요.');
-  }
-
-  if (!slug) {
-    throw new Error('슬러그를 입력해주세요.');
-  }
-
-  const supabase = await createClient();
-
-  const { error } = await supabase
-    .from('products')
-    .update({
-      name,
-      slug,
-      price: Number.isNaN(price) ? 0 : price,
-      stock: Number.isNaN(stock) ? 0 : stock,
-      is_active: isActive,
-    })
-    .eq('id', id);
-
-  if (error) {
-    throw new Error(`상품 수정 실패: ${error.message}`);
-  }
-
-  revalidatePath('/admin/products');
-  revalidatePath(`/admin/products/${id}`);
-}
-
-export async function deleteProduct(formData: FormData) {
-  'use server';
-
-  const id = Number(formData.get('id'));
-
-  if (!id) {
-    throw new Error('상품 ID가 올바르지 않습니다.');
-  }
-
-  const supabase = await createClient();
-
-  const { error } = await supabase.from('products').delete().eq('id', id);
-
-  if (error) {
-    throw new Error(`상품 삭제 실패: ${error.message}`);
-  }
-
-  revalidatePath('/admin/products');
+  return (data ?? []) as AdminProductImage[];
 }

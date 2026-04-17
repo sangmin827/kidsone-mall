@@ -1,7 +1,8 @@
 // src/components/mypage/ProfileForm.tsx
 "use client";
 
-import { useFormStatus } from "react-dom";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import type { MyProfile } from "@/src/server/mypage";
 import { updateMyProfile } from "@/src/server/mypage";
 
@@ -9,24 +10,69 @@ type Props = {
   profile: MyProfile;
 };
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-    >
-      {pending ? "저장 중..." : "저장하기"}
-    </button>
-  );
-}
-
 export default function ProfileForm({ profile }: Props) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const delayToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (delayToastTimerRef.current) {
+        clearTimeout(delayToastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (isSubmitting) return;
+
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      setIsSubmitting(true);
+
+      if (delayToastTimerRef.current) {
+        clearTimeout(delayToastTimerRef.current);
+      }
+      delayToastTimerRef.current = setTimeout(() => {
+        toast.loading("저장 중입니다...", {
+          id: "profile-update",
+          duration: 2000,
+        });
+      }, 1000);
+
+      await updateMyProfile(formData);
+
+      if (delayToastTimerRef.current) {
+        clearTimeout(delayToastTimerRef.current);
+        delayToastTimerRef.current = null;
+      }
+
+      toast.success("내 정보가 저장되었습니다.", {
+        id: "profile-update",
+        duration: 1500,
+      });
+    } catch (error) {
+      if (delayToastTimerRef.current) {
+        clearTimeout(delayToastTimerRef.current);
+        delayToastTimerRef.current = null;
+      }
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "내 정보 저장 중 오류가 발생했습니다.",
+        { id: "profile-update", duration: 2500 },
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <form
-      action={updateMyProfile}
+      onSubmit={handleSubmit}
       className="space-y-5 rounded-2xl border border-gray-200 bg-white p-6"
     >
       <div>
@@ -85,7 +131,13 @@ export default function ProfileForm({ profile }: Props) {
         </div>
       </div>
 
-      <SubmitButton />
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+      >
+        {isSubmitting ? "저장 중..." : "저장하기"}
+      </button>
     </form>
   );
 }

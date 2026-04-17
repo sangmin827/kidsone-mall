@@ -41,6 +41,18 @@ export default function ProductPurchaseBox({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+
+  // checkout / cart 페이지를 미리 prefetch 해서 클릭시 즉시 이동 가능하게 처리
+  useEffect(() => {
+    router.prefetch("/mypage/cart");
+    router.prefetch(
+      `/checkout?mode=single&productId=${productId}&quantity=1`,
+    );
+    router.prefetch(
+      `/checkout?mode=cart_plus_current&productId=${productId}&quantity=1`,
+    );
+    router.prefetch("/checkout?mode=cart");
+  }, [router, productId]);
   const getInitialQuantity = () => {
     const qty = Number(searchParams.get("buyQty") ?? "1");
 
@@ -108,6 +120,9 @@ export default function ProductPurchaseBox({
   };
 
   const handleAddToCart = () => {
+    // 지연 사용자에게 즉시 피드백을 주기 위해 optimistic 하게 토스트 먼저 띄움
+    openToast("장바구니에 담았습니다.", "success");
+
     const formData = new FormData();
     formData.set("productId", String(productId));
     formData.set("quantity", String(quantity));
@@ -115,16 +130,19 @@ export default function ProductPurchaseBox({
     startTransition(async () => {
       const result = await addToCartAction(formData);
 
-      if (result.ok) {
-        openToast(result.message, "success");
-        router.refresh();
-      } else {
+      if (!result.ok) {
+        // 실패 시 사용자에게 에러 토스트로 알림
         openToast(result.message, "error");
+      } else {
+        // 성공 시 조용히 갱신
+        router.refresh();
       }
     });
   };
 
   const goToCheckoutSingle = () => {
+    // startTransition 없이 즉시 navigate → 클릭 즉시 라우팅 시작
+    setIsBuyChoiceOpen(false);
     router.push(
       `/checkout?mode=single&productId=${productId}&quantity=${quantity}`,
     );
@@ -138,6 +156,7 @@ export default function ProductPurchaseBox({
   };
 
   const goToCheckoutWithCart = () => {
+    setIsBuyChoiceOpen(false);
     router.push(
       `/checkout?mode=cart_plus_current&productId=${productId}&quantity=${quantity}`,
     );

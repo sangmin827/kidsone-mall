@@ -17,6 +17,8 @@ type Props = {
   addresses: SavedAddress[];
   bankAccounts: BankAccount[];
   isLoggedIn: boolean;
+  // 'single' | 'cart' | 'cart_plus_current' — 결제 후 장바구니 비움 여부 판단용
+  mode?: string;
 };
 
 type AddressMode = "new" | "default" | "saved";
@@ -26,6 +28,7 @@ export default function CheckoutClient({
   addresses,
   bankAccounts,
   isLoggedIn,
+  mode,
 }: Props) {
   const [items, setItems] = useState<CheckoutItem[]>(initialItems);
   const [saveNewAddress, setSaveNewAddress] = useState(false);
@@ -83,6 +86,8 @@ export default function CheckoutClient({
     orderer_phone: "",
     orderer_email: "",
   });
+
+  const [depositorName, setDepositorName] = useState("");
 
   function formatPhone(value: string) {
     const numbers = value.replace(/\D/g, "").slice(0, 11);
@@ -212,6 +217,13 @@ export default function CheckoutClient({
 
   const handleOrder = async () => {
     if (isOrdering) return;
+
+    // 입금자명 필수 검증 (무통장 입금 결제이므로 입금자명이 필수)
+    const depositor_name = depositorName.trim();
+    if (!depositor_name) {
+      toast.warning("입금자명을 입력해주세요.", { duration: 2000 });
+      return;
+    }
 
     const toastId = toast.loading("주문 처리 중...");
 
@@ -352,6 +364,9 @@ export default function CheckoutClient({
         return;
       }
 
+      // mode=single 이 아닌 경우(cart / cart_plus_current) 결제 성공 시 장바구니 비움
+      const clearCart = mode !== "single";
+
       const orderRes = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -365,15 +380,16 @@ export default function CheckoutClient({
           address,
           detail_address,
           request_message,
+          depositor_name,
           orderer_name: isLoggedIn ? undefined : orderer.orderer_name.trim(),
           orderer_phone: isLoggedIn ? undefined : orderer.orderer_phone.trim(),
           orderer_email: isLoggedIn ? undefined : orderer.orderer_email.trim(),
-          items: !isLoggedIn
-            ? items.map((item) => ({
-                product_id: item.product_id,
-                quantity: item.quantity,
-              }))
-            : undefined,
+          // 회원/비회원 모두 클라이언트가 최종 items 를 전달 → 바로구매 등에서도 정확히 주문됨
+          items: items.map((item) => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+          })),
+          clear_cart: clearCart,
         }),
       });
 
@@ -808,6 +824,27 @@ export default function CheckoutClient({
                 ))
               )}
             </div>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            <label
+              htmlFor="depositor_name"
+              className="block text-sm font-semibold text-gray-900"
+            >
+              입금자명
+              <span className="ml-1 text-red-500">*</span>
+            </label>
+            <input
+              id="depositor_name"
+              name="depositor_name"
+              value={depositorName}
+              onChange={(e) => setDepositorName(e.target.value)}
+              placeholder="입금하실 때 사용할 입금자명을 입력해주세요"
+              className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+            />
+            <p className="text-xs font-medium text-red-500">
+              하단에 입금자 명으로 입금해야 확인 가능
+            </p>
           </div>
         </section>
       </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import LoginTrigger from "@/src/components/auth/LoginTrigger";
 
 type Category = {
   id: number;
@@ -104,13 +105,12 @@ export default function MobileMenu({
                     </form>
                   </>
                 ) : (
-                  <Link
-                    href="/login"
-                    onClick={() => setOpen(false)}
-                    className="text-gray-800"
+                  <LoginTrigger
+                    className="cursor-pointer text-left text-gray-800"
+                    onBeforeOpen={() => setOpen(false)}
                   >
                     로그인
-                  </Link>
+                  </LoginTrigger>
                 )}
               </div>
             </div>
@@ -122,6 +122,22 @@ export default function MobileMenu({
 
               <nav className="flex flex-col gap-4">
                 <Link
+                  href="/products?sort=new"
+                  onClick={() => setOpen(false)}
+                  className="text-gray-800"
+                >
+                  신상품
+                </Link>
+
+                <Link
+                  href="/products?view=top10"
+                  onClick={() => setOpen(false)}
+                  className="text-gray-800"
+                >
+                  Top 10
+                </Link>
+
+                <Link
                   href="/products"
                   onClick={() => setOpen(false)}
                   className="text-gray-800"
@@ -129,16 +145,33 @@ export default function MobileMenu({
                   전체상품
                 </Link>
 
-                {categories.map((category) => (
-                  <Link
-                    key={category.id}
-                    href={`/categories/${category.slug}`}
-                    onClick={() => setOpen(false)}
-                    className="text-gray-800"
-                  >
-                    {category.name}
-                  </Link>
-                ))}
+                <div className="ml-3 flex flex-col gap-3 border-l border-gray-200 pl-3">
+                  {categories
+                    .filter((category) => category.slug !== "sets")
+                    .map((category) => (
+                      <Link
+                        key={category.id}
+                        href={`/categories/${category.slug}`}
+                        onClick={() => setOpen(false)}
+                        className="text-sm text-gray-600"
+                      >
+                        {category.name}
+                      </Link>
+                    ))}
+                </div>
+
+                {categories
+                  .filter((category) => category.slug === "sets")
+                  .map((category) => (
+                    <Link
+                      key={category.id}
+                      href={`/categories/${category.slug}`}
+                      onClick={() => setOpen(false)}
+                      className="text-gray-800"
+                    >
+                      {category.name}
+                    </Link>
+                  ))}
               </nav>
             </div>
           </div>

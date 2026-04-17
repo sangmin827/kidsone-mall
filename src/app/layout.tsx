@@ -7,9 +7,13 @@ import { createClient } from "@/src/lib/supabase/server";
 import { logout } from "@/src/app/logout/actions";
 import CategoryMenu from "@/src/components/CategoryMenu";
 import MobileMenu from "@/src/components/MobileMenu";
+import Footer from "@/src/components/layout/Footer";
 import { Toaster } from "sonner";
+import { Suspense } from "react";
 import AuthToastBridge from "@/src/components/auth/AuthToastBridge";
 import LogoutButton from "@/src/components/auth/LogoutButton";
+import LoginModal from "@/src/components/auth/LoginModal";
+import LoginTrigger from "@/src/components/auth/LoginTrigger";
 
 export const metadata: Metadata = {
   title: "Kids One Mall",
@@ -90,9 +94,15 @@ export default async function RootLayout({
                 </>
               ) : (
                 <>
-                  <Link href="/login" className="nav-actions">
-                    로그인
-                  </Link>
+                  <Suspense
+                    fallback={
+                      <span className="nav-actions opacity-60">로그인</span>
+                    }
+                  >
+                    <LoginTrigger className="nav-actions cursor-pointer">
+                      로그인
+                    </LoginTrigger>
+                  </Suspense>
 
                   <Link href="/guest-order" className="nav-actions">
                     비회원 주문조회
@@ -111,12 +121,17 @@ export default async function RootLayout({
 
         {children}
 
+        <Footer />
+
         <Script
           src="//t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
           strategy="afterInteractive"
         />
         <AuthToastBridge />
         <Toaster position="top-center" richColors expand closeButton />
+        <Suspense fallback={null}>
+          <LoginModal />
+        </Suspense>
       </body>
     </html>
   );

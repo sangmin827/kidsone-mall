@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   removeCartItemAction,
   setCartItemQuantityAction,
@@ -96,6 +97,10 @@ export default function CartClient({ initialItems }: Props) {
       if (!result.ok) {
         setItems(prevItems);
         setErrorMessage(result.message);
+        toast.error(result.message, {
+          id: `cart-qty-${cartItemId}`,
+          duration: 2000,
+        });
       }
     }, 250);
   };
@@ -168,9 +173,18 @@ export default function CartClient({ initialItems }: Props) {
 
     const result = await removeCartItemAction(formData);
 
-    if (!result.ok) {
+    if (result.ok) {
+      toast.success("장바구니에서 삭제했습니다.", {
+        id: `cart-remove-${cartItemId}`,
+        duration: 1500,
+      });
+    } else {
       setItems(prevItems);
       setErrorMessage(result.message);
+      toast.error(result.message, {
+        id: `cart-remove-${cartItemId}`,
+        duration: 2500,
+      });
     }
 
     setRemovingId(null);

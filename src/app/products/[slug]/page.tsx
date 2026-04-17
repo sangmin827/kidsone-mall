@@ -2,6 +2,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/server";
 import ProductPurchaseBox from "@/src/components/product/ProductPurchaseBox";
+import SoldOutBox from "@/src/components/product/SoldOutBox";
 import { getMyCart } from "@/src/server/cart";
 
 type ProductImage = {
@@ -18,6 +19,8 @@ type Product = {
   short_description: string | null;
   description: string | null;
   stock: number | null;
+  is_sold_out: boolean | null;
+  hide_when_sold_out: boolean | null;
   product_images: ProductImage[] | null;
 };
 
@@ -35,6 +38,8 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
       short_description,
       description,
       stock,
+      is_sold_out,
+      hide_when_sold_out,
       product_images (
         image_url,
         is_thumbnail,
@@ -71,8 +76,15 @@ export default async function ProductDetailPage({
     notFound();
   }
 
+  // 품절 + 목록숨김 옵션이 둘 다 켜진 경우엔 상세에서도 404 처리
+  // (관리자가 "안 보이게 하고 싶다"고 명시한 의도이므로)
+  if (product.is_sold_out && product.hide_when_sold_out) {
+    notFound();
+  }
+
   const cartItemCount = cartResult.items.length;
   const isLoggedIn = !!authData.user;
+  const isSoldOut = !!product.is_sold_out;
 
   const images =
     product.product_images?.sort(
@@ -133,18 +145,24 @@ export default async function ProductDetailPage({
               {product.price.toLocaleString()}원
             </p>
 
-            <p className="text-sm text-gray-500">
-              재고: {product.stock ?? 0}개
-            </p>
+            {isSoldOut && (
+              <p className="inline-block rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">
+                품절
+              </p>
+            )}
           </div>
 
-          <ProductPurchaseBox
-            productId={product.id}
-            price={product.price}
-            stock={product.stock ?? 0}
-            cartItemCount={cartItemCount}
-            isLoggedIn={isLoggedIn}
-          />
+          {isSoldOut ? (
+            <SoldOutBox productId={product.id} />
+          ) : (
+            <ProductPurchaseBox
+              productId={product.id}
+              price={product.price}
+              stock={product.stock ?? 0}
+              cartItemCount={cartItemCount}
+              isLoggedIn={isLoggedIn}
+            />
+          )}
 
           {product.description && (
             <div className="rounded-2xl border border-gray-200 p-5">

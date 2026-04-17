@@ -75,6 +75,9 @@ export default function OrderList({ orders }: Props) {
               <p className="text-sm text-gray-700">
                 연락처: {order.orderer_phone ?? "미입력"}
               </p>
+              <p className="text-sm text-gray-700">
+                입금자명: {order.depositor_name ?? "미입력"}
+              </p>
             </div>
 
             <div className="space-y-2">

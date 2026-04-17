@@ -1,16 +1,38 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createMyAddress } from "@/src/server/addresses";
 
 export default function AddressForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const detailAddressRef = useRef<HTMLInputElement>(null);
+  const delayToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [postalCode, setPostalCode] = useState("");
   const [addressMain, setAddressMain] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [recipientPhoneExtra, setRecipientPhoneExtra] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (delayToastTimerRef.current) {
+        clearTimeout(delayToastTimerRef.current);
+      }
+    };
+  }, []);
+
+  // 휴대폰 입력을 010-1234-5678 형식으로 자동 포맷
+  const formatPhone = (value: string) => {
+    const numbers = value.replace(/\D/g, "").slice(0, 11);
+
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 7) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    }
+    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+  };
 
   const handleSearchAddress = () => {
     if (!window.kakao?.Postcode) {
@@ -63,20 +85,37 @@ export default function AddressForm() {
     const formData = new FormData(event.currentTarget);
 
     const recipientName = String(formData.get("recipient_name") ?? "").trim();
-    const recipientPhone = String(formData.get("recipient_phone") ?? "").trim();
+    const recipientPhoneValue = recipientPhone.trim();
+    const recipientPhoneExtraValue = recipientPhoneExtra.trim();
     const postalCodeValue = String(formData.get("postal_code") ?? "").trim();
     const addressMainValue = String(formData.get("address_main") ?? "").trim();
     const addressDetail = String(formData.get("address_detail") ?? "").trim();
+
+    const phoneRegex = /^01[0-9]-\d{3,4}-\d{4}$/;
 
     if (!recipientName) {
       toast.error("이름을 입력해주세요.");
       return;
     }
 
-    if (!recipientPhone) {
-      toast.error("연락처를 입력해주세요.");
+    if (!recipientPhoneValue) {
+      toast.error("연락처 1은 필수입니다.");
       return;
     }
+
+    if (!phoneRegex.test(recipientPhoneValue)) {
+      toast.error("연락처 1은 010-1234-5678 형식으로 입력해주세요.");
+      return;
+    }
+
+    if (recipientPhoneExtraValue && !phoneRegex.test(recipientPhoneExtraValue)) {
+      toast.error("연락처 2는 010-1234-5678 형식으로 입력해주세요.");
+      return;
+    }
+
+    // FormData 에도 포맷된 값 반영
+    formData.set("recipient_phone", recipientPhoneValue);
+    formData.set("recipient_phone_extra", recipientPhoneExtraValue);
 
     if (!postalCodeValue) {
       toast.error("우편번호를 입력해주세요.");
@@ -96,18 +135,48 @@ export default function AddressForm() {
     try {
       setIsSubmitting(true);
 
+      // 1초 넘게 걸리면 "처리 중" 안내 토스트
+      if (delayToastTimerRef.current) {
+        clearTimeout(delayToastTimerRef.current);
+      }
+      delayToastTimerRef.current = setTimeout(() => {
+        toast.loading("배송지 추가 처리 중입니다...", {
+          id: "address-create",
+          duration: 2000,
+        });
+      }, 1000);
+
       await createMyAddress(formData);
+
+      if (delayToastTimerRef.current) {
+        clearTimeout(delayToastTimerRef.current);
+        delayToastTimerRef.current = null;
+      }
 
       formRef.current?.reset();
       setPostalCode("");
       setAddressMain("");
+      setRecipientPhone("");
+      setRecipientPhoneExtra("");
 
-      toast.success("배송지가 추가되었습니다.");
+      toast.success("배송지가 추가되었습니다.", {
+        id: "address-create",
+        duration: 1500,
+      });
     } catch (error) {
+      if (delayToastTimerRef.current) {
+        clearTimeout(delayToastTimerRef.current);
+        delayToastTimerRef.current = null;
+      }
+
       toast.error(
         error instanceof Error
           ? error.message
           : "배송지 추가 중 오류가 발생했습니다.",
+        {
+          id: "address-create",
+          duration: 2500,
+        },
       );
     } finally {
       setIsSubmitting(false);
@@ -130,7 +199,23 @@ export default function AddressForm() {
 
       <input
         name="recipient_phone"
-        placeholder="수령자 연락처"
+        type="tel"
+        inputMode="numeric"
+        maxLength={13}
+        placeholder="수령자 연락처 1 (010-1234-5678) *필수"
+        value={recipientPhone}
+        onChange={(e) => setRecipientPhone(formatPhone(e.target.value))}
+        className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
+      />
+
+      <input
+        name="recipient_phone_extra"
+        type="tel"
+        inputMode="numeric"
+        maxLength={13}
+        placeholder="수령자 연락처 2 (010-1234-5678) *선택"
+        value={recipientPhoneExtra}
+        onChange={(e) => setRecipientPhoneExtra(formatPhone(e.target.value))}
         className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
       />
 

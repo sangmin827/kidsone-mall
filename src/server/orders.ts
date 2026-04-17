@@ -23,6 +23,7 @@ export type MyOrder = {
     | "delivered"
     | "cancelled";
   total_amount: number;
+  depositor_name: string | null;
   orderer_name: string | null;
   orderer_phone: string | null;
   orderer_email: string | null;
@@ -48,6 +49,7 @@ export type GuestLookupOrder = {
     | "delivered"
     | "cancelled";
   total_amount: number;
+  depositor_name: string | null;
   orderer_name: string | null;
   orderer_phone: string | null;
   orderer_email: string | null;
@@ -80,6 +82,8 @@ type CheckoutInput = {
   orderer_phone?: string;
   orderer_email?: string;
   items?: CheckoutInputItem[];
+  // 장바구니 비우기 여부: cart / cart_plus_current 모드에서만 true
+  clear_cart?: boolean;
 };
 
 type ProductForOrder = {
@@ -185,6 +189,7 @@ export async function getMyOrders(): Promise<MyOrder[]> {
       order_number,
       status,
       total_amount,
+      depositor_name,
       orderer_name,
       orderer_phone,
       orderer_email,
@@ -243,78 +248,172 @@ async function createMemberOrder(
     throw new Error("회원 정보를 불러오지 못했습니다.");
   }
 
-  const { data: cart, error: cartError } = await supabase
-    .from("carts")
-    .select("id")
-    .eq("user_id", userId)
-    .maybeSingle();
+  // 바로구매(mode=single) 등은 클라이언트에서 items 를 직접 전달.
+  // cart / cart_plus_current 는 clear_cart=true 와 함께 items 전달.
+  // items 가 없으면 장바구니에서 읽어서 주문하는 기존 경로 유지.
+  const providedItems = input.items?.filter(
+    (item) => item.product_id && item.quantity > 0,
+  );
 
-  if (cartError) {
-    throw new Error(`장바구니 조회 실패: ${cartError.message}`);
-  }
-
-  if (!cart) {
-    throw new Error("장바구니가 비어 있습니다.");
-  }
-
-  const { data: cartItems, error: cartItemsError } = await supabase
-    .from("cart_items")
-    .select(
-      `
-      id,
-      quantity,
-      product_id,
-      products (
-        id,
-        name,
-        price,
-        stock,
-        is_active
-      )
-    `,
-    )
-    .eq("cart_id", cart.id);
-
-  if (cartItemsError) {
-    throw new Error(`장바구니 상품 조회 실패: ${cartItemsError.message}`);
-  }
-
-  if (!cartItems || cartItems.length === 0) {
-    throw new Error("주문할 상품이 없습니다.");
-  }
-
-  let totalAmount = 0;
-
-  const stockPayload: {
+  type StockPayloadItem = {
     productId: number;
     quantity: number;
     currentStock: number;
-  }[] = [];
+  };
+  type OrderItemPayload = {
+    product_id: number;
+    product_name_snapshot: string;
+    price_snapshot: number;
+    quantity: number;
+  };
 
-  for (const item of cartItems) {
-    const product = Array.isArray(item.products)
-      ? item.products[0]
-      : item.products;
+  const stockPayload: StockPayloadItem[] = [];
+  const orderItemsPayload: OrderItemPayload[] = [];
+  let totalAmount = 0;
 
-    if (!product) {
-      throw new Error("상품 정보를 찾을 수 없습니다.");
+  let cartId: number | null = null;
+
+  if (providedItems && providedItems.length > 0) {
+    // 클라이언트가 전달한 items 를 직접 사용
+    const productIds = providedItems.map((item) => Number(item.product_id));
+    const { data: products, error: productsError } = await supabase
+      .from("products")
+      .select("id, name, price, stock, is_active")
+      .in("id", productIds);
+
+    if (productsError) {
+      throw new Error(`상품 조회 실패: ${productsError.message}`);
     }
 
-    if (!product.is_active) {
-      throw new Error(`판매 중지된 상품이 포함되어 있습니다: ${product.name}`);
+    if (!products || products.length === 0) {
+      throw new Error("주문 가능한 상품을 찾을 수 없습니다.");
     }
 
-    if (product.stock < item.quantity) {
-      throw new Error(`재고가 부족합니다: ${product.name}`);
+    const productMap = new Map<number, ProductForOrder>();
+    for (const product of products) {
+      productMap.set(product.id, product as ProductForOrder);
     }
 
-    totalAmount += product.price * item.quantity;
+    for (const item of providedItems) {
+      const product = productMap.get(Number(item.product_id));
 
-    stockPayload.push({
-      productId: product.id,
-      quantity: item.quantity,
-      currentStock: product.stock,
-    });
+      if (!product) {
+        throw new Error("상품 정보를 찾을 수 없습니다.");
+      }
+      if (!product.is_active) {
+        throw new Error(
+          `판매 중지된 상품이 포함되어 있습니다: ${product.name}`,
+        );
+      }
+      if (product.stock < Number(item.quantity)) {
+        throw new Error(`재고가 부족합니다: ${product.name}`);
+      }
+
+      totalAmount += product.price * Number(item.quantity);
+
+      stockPayload.push({
+        productId: product.id,
+        quantity: Number(item.quantity),
+        currentStock: product.stock,
+      });
+
+      orderItemsPayload.push({
+        product_id: product.id,
+        product_name_snapshot: product.name,
+        price_snapshot: product.price,
+        quantity: Number(item.quantity),
+      });
+    }
+
+    // 장바구니 비우기가 필요한 경우 cart id 확보
+    if (input.clear_cart) {
+      const { data: cart } = await supabase
+        .from("carts")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      cartId = cart?.id ?? null;
+    }
+  } else {
+    // 레거시 경로: items 없음 → 장바구니에서 읽어서 주문
+    const { data: cart, error: cartError } = await supabase
+      .from("carts")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (cartError) {
+      throw new Error(`장바구니 조회 실패: ${cartError.message}`);
+    }
+
+    if (!cart) {
+      throw new Error("장바구니가 비어 있습니다.");
+    }
+
+    cartId = cart.id;
+
+    const { data: cartItems, error: cartItemsError } = await supabase
+      .from("cart_items")
+      .select(
+        `
+        id,
+        quantity,
+        product_id,
+        products (
+          id,
+          name,
+          price,
+          stock,
+          is_active
+        )
+      `,
+      )
+      .eq("cart_id", cart.id);
+
+    if (cartItemsError) {
+      throw new Error(`장바구니 상품 조회 실패: ${cartItemsError.message}`);
+    }
+
+    if (!cartItems || cartItems.length === 0) {
+      throw new Error("주문할 상품이 없습니다.");
+    }
+
+    for (const item of cartItems) {
+      const product = Array.isArray(item.products)
+        ? item.products[0]
+        : item.products;
+
+      if (!product) {
+        throw new Error("상품 정보를 찾을 수 없습니다.");
+      }
+      if (!product.is_active) {
+        throw new Error(
+          `판매 중지된 상품이 포함되어 있습니다: ${product.name}`,
+        );
+      }
+      if (product.stock < item.quantity) {
+        throw new Error(`재고가 부족합니다: ${product.name}`);
+      }
+
+      totalAmount += product.price * item.quantity;
+
+      stockPayload.push({
+        productId: product.id,
+        quantity: item.quantity,
+        currentStock: product.stock,
+      });
+
+      orderItemsPayload.push({
+        product_id: item.product_id,
+        product_name_snapshot: product.name,
+        price_snapshot: product.price,
+        quantity: item.quantity,
+      });
+    }
+  }
+
+  if (orderItemsPayload.length === 0) {
+    throw new Error("주문할 상품이 없습니다.");
   }
 
   const orderNumber = makeOrderNumber();
@@ -349,41 +448,34 @@ async function createMemberOrder(
     );
   }
 
-  const orderItemsPayload = cartItems.map((item) => {
-    const product = Array.isArray(item.products)
-      ? item.products[0]
-      : item.products;
-
-    if (!product) {
-      throw new Error("상품 정보를 찾을 수 없습니다.");
-    }
-
-    return {
-      order_id: order.id,
-      product_id: item.product_id,
-      product_name_snapshot: product.name,
-      price_snapshot: product.price,
-      quantity: item.quantity,
-    };
-  });
+  const finalOrderItemsPayload = orderItemsPayload.map((item) => ({
+    order_id: order.id,
+    ...item,
+  }));
 
   const { error: orderItemsError } = await supabase
     .from("order_items")
-    .insert(orderItemsPayload);
+    .insert(finalOrderItemsPayload);
 
   if (orderItemsError) {
     throw new Error(`주문 상품 생성 실패: ${orderItemsError.message}`);
   }
 
-  await reduceProductStock(supabase, stockPayload);
+  // 재고 자동 차감은 품절 수동 관리 방식으로 전환되면서 제거됨.
+  // stockPayload / reduceProductStock 은 사용하지 않음 (향후 삭제 예정).
 
-  const { error: deleteCartItemsError } = await supabase
-    .from("cart_items")
-    .delete()
-    .eq("cart_id", cart.id);
+  // 장바구니 비우기: items 경로에서는 clear_cart=true, 레거시 경로는 항상 비움
+  const shouldClearCart = providedItems ? !!input.clear_cart : true;
 
-  if (deleteCartItemsError) {
-    throw new Error(`장바구니 비우기 실패: ${deleteCartItemsError.message}`);
+  if (shouldClearCart && cartId) {
+    const { error: deleteCartItemsError } = await supabase
+      .from("cart_items")
+      .delete()
+      .eq("cart_id", cartId);
+
+    if (deleteCartItemsError) {
+      throw new Error(`장바구니 비우기 실패: ${deleteCartItemsError.message}`);
+    }
   }
 
   revalidatePath("/cart");
@@ -535,7 +627,7 @@ async function createGuestOrder(input: CheckoutInput) {
     throw new Error(`비회원 주문 상품 생성 실패: ${orderItemsError.message}`);
   }
 
-  await reduceProductStock(supabase, stockPayload);
+  // 재고 자동 차감은 품절 수동 관리 방식으로 전환되면서 제거됨.
 
   revalidatePath("/products");
 
@@ -595,6 +687,7 @@ export async function getGuestOrderByOrderNumberAndPhone(
       order_number,
       status,
       total_amount,
+      depositor_name,
       orderer_name,
       orderer_phone,
       orderer_email,

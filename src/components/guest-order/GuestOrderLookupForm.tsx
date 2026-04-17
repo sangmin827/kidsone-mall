@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 function formatPhone(value: string) {
   const numbers = value.replace(/\D/g, "").slice(0, 11);
@@ -24,7 +25,20 @@ export default function GuestOrderLookupForm() {
     const trimmedOrderNumber = orderNumber.trim();
     const trimmedPhone = phone.trim();
 
-    if (!trimmedOrderNumber || !trimmedPhone) {
+    const phoneRegex = /^01[0-9]-\d{3,4}-\d{4}$/;
+
+    if (!trimmedOrderNumber) {
+      toast.error("주문번호를 입력해주세요.");
+      return;
+    }
+
+    if (!trimmedPhone) {
+      toast.error("주문자 연락처를 입력해주세요.");
+      return;
+    }
+
+    if (!phoneRegex.test(trimmedPhone)) {
+      toast.error("연락처는 010-1234-5678 형식으로 입력해주세요.");
       return;
     }
 

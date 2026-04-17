@@ -1,5 +1,4 @@
-import { revalidatePath } from 'next/cache';
-import { createClient } from '@/src/lib/supabase/server';
+import { requireAdmin } from '@/src/server/admin-auth';
 
 export type AdminCategory = {
   id: number;
@@ -13,8 +12,13 @@ export type AdminCategory = {
   updated_at: string;
 };
 
+export type AdminCategoryWithCount = AdminCategory & {
+  product_count: number;
+  child_count: number;
+};
+
 export async function getAdminCategories(): Promise<AdminCategory[]> {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   const { data, error } = await supabase
     .from('categories')
@@ -30,107 +34,57 @@ export async function getAdminCategories(): Promise<AdminCategory[]> {
   return (data ?? []) as AdminCategory[];
 }
 
-export async function createCategory(formData: FormData) {
-  'use server';
+/**
+ * 카테고리 목록 + 각 카테고리에 연결된 상품 수 + 하위 카테고리 수 를 함께 조회.
+ * 삭제/UI 표시 용도로 사용.
+ */
+export async function getAdminCategoriesWithCounts(): Promise<
+  AdminCategoryWithCount[]
+> {
+  const { supabase } = await requireAdmin();
 
-  const name = String(formData.get('name') ?? '').trim();
-  const slug = String(formData.get('slug') ?? '').trim();
-  const sortOrder = Number(formData.get('sort_order') ?? 0);
-  const isActive = formData.get('is_active') === 'on';
+  const [categoriesResult, productsResult] = await Promise.all([
+    supabase
+      .from('categories')
+      .select('*')
+      .order('level', { ascending: true })
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true }),
+    supabase.from('products').select('category_id'),
+  ]);
 
-  const parentRaw = String(formData.get('parent_id') ?? '').trim();
-  const parent_id = parentRaw ? Number(parentRaw) : null;
-
-  const level = parent_id ? 2 : 1;
-
-  if (!name) {
-    throw new Error('카테고리명을 입력해주세요.');
+  if (categoriesResult.error) {
+    throw new Error(`카테고리 조회 실패: ${categoriesResult.error.message}`);
+  }
+  if (productsResult.error) {
+    throw new Error(`상품 카운트 조회 실패: ${productsResult.error.message}`);
   }
 
-  if (!slug) {
-    throw new Error('슬러그를 입력해주세요.');
+  const categories = (categoriesResult.data ?? []) as AdminCategory[];
+  const products = (productsResult.data ?? []) as Array<{
+    category_id: number | null;
+  }>;
+
+  // 상품 수 집계
+  const productCountMap = new Map<number, number>();
+  for (const p of products) {
+    if (p.category_id === null) continue;
+    productCountMap.set(
+      p.category_id,
+      (productCountMap.get(p.category_id) ?? 0) + 1,
+    );
   }
 
-  const supabase = await createClient();
-
-  const { error } = await supabase.from('categories').insert({
-    name,
-    slug,
-    parent_id,
-    level,
-    sort_order: Number.isNaN(sortOrder) ? 0 : sortOrder,
-    is_active: isActive,
-  });
-
-  if (error) {
-    throw new Error(`카테고리 등록 실패: ${error.message}`);
+  // 하위 카테고리 수 집계
+  const childCountMap = new Map<number, number>();
+  for (const c of categories) {
+    if (c.parent_id === null) continue;
+    childCountMap.set(c.parent_id, (childCountMap.get(c.parent_id) ?? 0) + 1);
   }
 
-  revalidatePath('/admin/categories');
-}
-
-export async function updateCategory(formData: FormData) {
-  'use server';
-
-  const id = Number(formData.get('id'));
-  const name = String(formData.get('name') ?? '').trim();
-  const slug = String(formData.get('slug') ?? '').trim();
-  const sortOrder = Number(formData.get('sort_order') ?? 0);
-  const isActive = formData.get('is_active') === 'on';
-
-  const parentRaw = String(formData.get('parent_id') ?? '').trim();
-  const parent_id = parentRaw ? Number(parentRaw) : null;
-  const level = parent_id ? 2 : 1;
-
-  if (!id) {
-    throw new Error('카테고리 ID가 올바르지 않습니다.');
-  }
-
-  if (!name) {
-    throw new Error('카테고리명을 입력해주세요.');
-  }
-
-  if (!slug) {
-    throw new Error('슬러그를 입력해주세요.');
-  }
-
-  const supabase = await createClient();
-
-  const { error } = await supabase
-    .from('categories')
-    .update({
-      name,
-      slug,
-      parent_id,
-      level,
-      sort_order: Number.isNaN(sortOrder) ? 0 : sortOrder,
-      is_active: isActive,
-    })
-    .eq('id', id);
-
-  if (error) {
-    throw new Error(`카테고리 수정 실패: ${error.message}`);
-  }
-
-  revalidatePath('/admin/categories');
-}
-
-export async function deleteCategory(formData: FormData) {
-  'use server';
-
-  const id = Number(formData.get('id'));
-
-  if (!id) {
-    throw new Error('카테고리 ID가 올바르지 않습니다.');
-  }
-
-  const supabase = await createClient();
-
-  const { error } = await supabase.from('categories').delete().eq('id', id);
-
-  if (error) {
-    throw new Error(`카테고리 삭제 실패: ${error.message}`);
-  }
-
-  revalidatePath('/admin/categories');
+  return categories.map((c) => ({
+    ...c,
+    product_count: productCountMap.get(c.id) ?? 0,
+    child_count: childCountMap.get(c.id) ?? 0,
+  }));
 }
