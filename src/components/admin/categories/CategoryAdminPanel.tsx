@@ -1,24 +1,24 @@
-'use client';
+"use client";
 
-import { useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import type { AdminCategoryWithCount } from '@/src/server/admin-categories';
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import type { AdminCategoryWithCount } from "@/src/server/admin-categories";
 import {
   createCategory,
   deleteCategory,
   moveCategory,
   toggleCategoryActive,
   updateCategory,
-} from '@/src/server/admin-category-actions';
+} from "@/src/server/admin-category-actions";
 
 type Props = {
   categories: AdminCategoryWithCount[];
 };
 
 type EditState =
-  | { mode: 'create'; parentId: number | null }
-  | { mode: 'edit'; category: AdminCategoryWithCount }
+  | { mode: "create"; parentId: number | null }
+  | { mode: "edit"; category: AdminCategoryWithCount }
   | null;
 
 export default function CategoryAdminPanel({ categories }: Props) {
@@ -54,7 +54,7 @@ export default function CategoryAdminPanel({ categories }: Props) {
         if (!silent) toast.success(label);
         router.refresh();
       } catch (error) {
-        const message = error instanceof Error ? error.message : '작업 실패';
+        const message = error instanceof Error ? error.message : "작업 실패";
         toast.error(message);
       }
     });
@@ -69,23 +69,26 @@ export default function CategoryAdminPanel({ categories }: Props) {
       return;
     }
     const fd = new FormData();
-    fd.set('id', String(cat.id));
-    runAction('카테고리가 삭제되었습니다.', () => deleteCategory(fd));
+    fd.set("id", String(cat.id));
+    runAction("카테고리가 삭제되었습니다.", () => deleteCategory(fd));
   };
 
-  const handleMove = (cat: AdminCategoryWithCount, direction: 'up' | 'down') => {
+  const handleMove = (
+    cat: AdminCategoryWithCount,
+    direction: "up" | "down",
+  ) => {
     const fd = new FormData();
-    fd.set('id', String(cat.id));
-    fd.set('direction', direction);
-    runAction('', () => moveCategory(fd), { silent: true });
+    fd.set("id", String(cat.id));
+    fd.set("direction", direction);
+    runAction("", () => moveCategory(fd), { silent: true });
   };
 
   const handleToggleActive = (cat: AdminCategoryWithCount) => {
     const fd = new FormData();
-    fd.set('id', String(cat.id));
-    fd.set('next_active', cat.is_active ? 'false' : 'true');
+    fd.set("id", String(cat.id));
+    fd.set("next_active", cat.is_active ? "false" : "true");
     runAction(
-      cat.is_active ? '카테고리를 숨겼습니다.' : '카테고리를 노출합니다.',
+      cat.is_active ? "카테고리를 숨겼습니다." : "카테고리를 노출합니다.",
       () => toggleCategoryActive(fd),
     );
   };
@@ -93,23 +96,23 @@ export default function CategoryAdminPanel({ categories }: Props) {
   const handleSubmitForm = async (fd: FormData) => {
     if (!editState) return;
 
-    if (editState.mode === 'create') {
+    if (editState.mode === "create") {
       if (editState.parentId !== null) {
-        fd.set('parent_id', String(editState.parentId));
+        fd.set("parent_id", String(editState.parentId));
       }
       try {
         await createCategory(fd);
-        toast.success('카테고리가 등록되었습니다.');
+        toast.success("카테고리가 등록되었습니다.");
         setEditState(null);
         router.refresh();
       } catch (error) {
         throw error; // 모달에서 catch 해서 메시지 표시
       }
     } else {
-      fd.set('id', String(editState.category.id));
+      fd.set("id", String(editState.category.id));
       try {
         await updateCategory(fd);
-        toast.success('카테고리가 수정되었습니다.');
+        toast.success("카테고리가 수정되었습니다.");
         setEditState(null);
         router.refresh();
       } catch (error) {
@@ -123,13 +126,12 @@ export default function CategoryAdminPanel({ categories }: Props) {
       {/* 상단 툴바 */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-600">
-          총 <strong>{categories.length}</strong>개 카테고리 (상위{' '}
-          {topLevels.length}개 · 하위{' '}
-          {categories.length - topLevels.length}개)
+          총 <strong>{categories.length}</strong>개 카테고리 (상위{" "}
+          {topLevels.length}개 · 하위 {categories.length - topLevels.length}개)
         </p>
         <button
           type="button"
-          onClick={() => setEditState({ mode: 'create', parentId: null })}
+          onClick={() => setEditState({ mode: "create", parentId: null })}
           className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-900"
         >
           + 상위 카테고리 추가
@@ -150,19 +152,19 @@ export default function CategoryAdminPanel({ categories }: Props) {
             <GroupCard
               key={top.id}
               parent={top}
-              children={childrenMap.get(top.id) ?? []}
+              subCategories={childrenMap.get(top.id) ?? []}
               isFirst={topIndex === 0}
               isLast={topIndex === topLevels.length - 1}
               pending={pending}
-              onEdit={() => setEditState({ mode: 'edit', category: top })}
+              onEdit={() => setEditState({ mode: "edit", category: top })}
               onAddChild={() =>
-                setEditState({ mode: 'create', parentId: top.id })
+                setEditState({ mode: "create", parentId: top.id })
               }
               onMove={handleMove}
               onToggleActive={handleToggleActive}
               onDelete={handleDelete}
               onEditChild={(child) =>
-                setEditState({ mode: 'edit', category: child })
+                setEditState({ mode: "edit", category: child })
               }
             />
           ))}
@@ -192,7 +194,7 @@ export default function CategoryAdminPanel({ categories }: Props) {
                       <button
                         type="button"
                         onClick={() =>
-                          setEditState({ mode: 'edit', category: orphan })
+                          setEditState({ mode: "edit", category: orphan })
                         }
                         disabled={pending}
                         className="rounded-lg border px-2 py-1 text-xs"
@@ -233,7 +235,7 @@ export default function CategoryAdminPanel({ categories }: Props) {
 
 function GroupCard({
   parent,
-  children,
+  subCategories,
   isFirst,
   isLast,
   pending,
@@ -245,13 +247,13 @@ function GroupCard({
   onEditChild,
 }: {
   parent: AdminCategoryWithCount;
-  children: AdminCategoryWithCount[];
+  subCategories: AdminCategoryWithCount[];
   isFirst: boolean;
   isLast: boolean;
   pending: boolean;
   onEdit: () => void;
   onAddChild: () => void;
-  onMove: (cat: AdminCategoryWithCount, direction: 'up' | 'down') => void;
+  onMove: (cat: AdminCategoryWithCount, direction: "up" | "down") => void;
   onToggleActive: (cat: AdminCategoryWithCount) => void;
   onDelete: (cat: AdminCategoryWithCount) => void;
   onEditChild: (cat: AdminCategoryWithCount) => void;
@@ -259,7 +261,7 @@ function GroupCard({
   return (
     <section
       className={`overflow-hidden rounded-2xl border bg-white ${
-        parent.is_active ? '' : 'opacity-75'
+        parent.is_active ? "" : "opacity-75"
       }`}
     >
       {/* 헤더 */}
@@ -289,7 +291,7 @@ function GroupCard({
         <div className="flex flex-wrap items-center gap-1">
           <button
             type="button"
-            onClick={() => onMove(parent, 'up')}
+            onClick={() => onMove(parent, "up")}
             disabled={pending || isFirst}
             className="rounded-lg border px-2 py-1 text-xs disabled:opacity-40"
             title="위로"
@@ -298,7 +300,7 @@ function GroupCard({
           </button>
           <button
             type="button"
-            onClick={() => onMove(parent, 'down')}
+            onClick={() => onMove(parent, "down")}
             disabled={pending || isLast}
             className="rounded-lg border px-2 py-1 text-xs disabled:opacity-40"
             title="아래로"
@@ -311,7 +313,7 @@ function GroupCard({
             disabled={pending}
             className="rounded-lg border px-3 py-1 text-xs"
           >
-            {parent.is_active ? '숨기기' : '노출'}
+            {parent.is_active ? "숨기기" : "노출"}
           </button>
           <button
             type="button"
@@ -334,16 +336,16 @@ function GroupCard({
 
       {/* 바디: 하위 카테고리 리스트 */}
       <div className="divide-y">
-        {children.length === 0 ? (
+        {subCategories.length === 0 ? (
           <p className="px-4 py-6 text-center text-xs text-gray-400">
             등록된 하위 카테고리가 없습니다.
           </p>
         ) : (
-          children.map((child, idx) => (
+          subCategories.map((child, idx) => (
             <div
               key={child.id}
               className={`flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
-                child.is_active ? '' : 'opacity-60'
+                child.is_active ? "" : "opacity-60"
               }`}
             >
               <div>
@@ -366,7 +368,7 @@ function GroupCard({
               <div className="flex flex-wrap items-center gap-1">
                 <button
                   type="button"
-                  onClick={() => onMove(child, 'up')}
+                  onClick={() => onMove(child, "up")}
                   disabled={pending || idx === 0}
                   className="rounded-lg border px-2 py-1 text-xs disabled:opacity-40"
                 >
@@ -374,8 +376,8 @@ function GroupCard({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onMove(child, 'down')}
-                  disabled={pending || idx === children.length - 1}
+                  onClick={() => onMove(child, "down")}
+                  disabled={pending || idx === subCategories.length - 1}
                   className="rounded-lg border px-2 py-1 text-xs disabled:opacity-40"
                 >
                   ↓
@@ -386,7 +388,7 @@ function GroupCard({
                   disabled={pending}
                   className="rounded-lg border px-2 py-1 text-xs"
                 >
-                  {child.is_active ? '숨기기' : '노출'}
+                  {child.is_active ? "숨기기" : "노출"}
                 </button>
                 <button
                   type="button"
@@ -441,7 +443,7 @@ function CategoryEditModal({
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const isEdit = state.mode === 'edit';
+  const isEdit = state.mode === "edit";
   const initial = isEdit ? state.category : null;
   const fixedParentId = !isEdit ? state.parentId : undefined;
 
@@ -457,7 +459,7 @@ function CategoryEditModal({
       const fd = new FormData(e.currentTarget);
       await onSubmit(fd);
     } catch (error) {
-      const msg = error instanceof Error ? error.message : '저장 실패';
+      const msg = error instanceof Error ? error.message : "저장 실패";
       setErrorMsg(msg);
       toast.error(msg);
     } finally {
@@ -468,8 +470,8 @@ function CategoryEditModal({
   const title = isEdit
     ? `'${initial!.name}' 수정`
     : state.parentId === null
-      ? '상위 카테고리 추가'
-      : '하위 카테고리 추가';
+      ? "상위 카테고리 추가"
+      : "하위 카테고리 추가";
 
   return (
     <div
@@ -500,7 +502,7 @@ function CategoryEditModal({
             <input
               type="text"
               name="name"
-              defaultValue={initial?.name ?? ''}
+              defaultValue={initial?.name ?? ""}
               placeholder="예: 유아체육"
               required
               className="w-full rounded-xl border px-3 py-2 text-sm"
@@ -514,7 +516,7 @@ function CategoryEditModal({
             <input
               type="text"
               name="slug"
-              defaultValue={initial?.slug ?? ''}
+              defaultValue={initial?.slug ?? ""}
               placeholder="예: kids-sports"
               required
               className="w-full rounded-xl border px-3 py-2 text-sm"
@@ -532,12 +534,13 @@ function CategoryEditModal({
               name="parent_id"
               defaultValue={
                 isEdit
-                  ? initial?.parent_id !== null && initial?.parent_id !== undefined
+                  ? initial?.parent_id !== null &&
+                    initial?.parent_id !== undefined
                     ? String(initial.parent_id)
-                    : ''
+                    : ""
                   : fixedParentId !== null && fixedParentId !== undefined
                     ? String(fixedParentId)
-                    : ''
+                    : ""
               }
               disabled={!isEdit && fixedParentId !== null}
               className="w-full rounded-xl border px-3 py-2 text-sm disabled:bg-gray-100"
@@ -557,9 +560,7 @@ function CategoryEditModal({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">
-              정렬 순서
-            </label>
+            <label className="mb-1 block text-sm font-medium">정렬 순서</label>
             <input
               type="number"
               name="sort_order"
@@ -608,10 +609,10 @@ function CategoryEditModal({
               className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
             >
               {submitting
-                ? '저장 중...'
+                ? "저장 중..."
                 : isEdit
-                  ? '수정 저장'
-                  : '카테고리 등록'}
+                  ? "수정 저장"
+                  : "카테고리 등록"}
             </button>
           </div>
         </form>
