@@ -12,24 +12,51 @@ export default function AdminPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <Link
-          href="/admin/products"
-          className="rounded-2xl border bg-white p-6 shadow-sm transition hover:shadow"
+          href="/admin/catalog"
+          className="rounded-2xl border-2 border-black bg-white p-6 shadow-sm transition hover:shadow md:col-span-2"
         >
-          <h2 className="text-lg font-semibold">상품 관리</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold">카탈로그 관리 (통합)</h2>
+            <span className="rounded-full bg-black px-2 py-0.5 text-[11px] font-semibold text-white">
+              추천
+            </span>
+          </div>
           <p className="mt-2 text-sm text-gray-500">
-            상품 목록 조회, 등록, 수정, 삭제
+            카테고리(폴더) + 상품(파일)을 한 화면에서 트리로 보고, 이름·가격·카테고리를
+            바로 수정하세요.
           </p>
         </Link>
 
         <Link
-          href="/admin/categories"
+          href="/admin/products/sets"
           className="rounded-2xl border bg-white p-6 shadow-sm transition hover:shadow"
         >
-          <h2 className="text-lg font-semibold">카테고리 관리</h2>
+          <h2 className="text-lg font-semibold">세트 상품 관리</h2>
           <p className="mt-2 text-sm text-gray-500">
-            대분류 중심으로 관리하고, 나중에 중분류/소분류로 확장
+            세트 카테고리에 속한 상품만 모아서 관리합니다.
           </p>
         </Link>
+
+        <Link
+          href="/admin/products/new-arrivals"
+          className="rounded-2xl border bg-white p-6 shadow-sm transition hover:shadow"
+        >
+          <h2 className="text-lg font-semibold">신상품 관리</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            체크박스로 신상품 노출 여부를 한번에 설정합니다.
+          </p>
+        </Link>
+
+        <Link
+          href="/admin/products/top10"
+          className="rounded-2xl border bg-white p-6 shadow-sm transition hover:shadow"
+        >
+          <h2 className="text-lg font-semibold">Top 10 · 100 관리</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            드래그로 1~100위 순위를 지정합니다. 1~10위는 홈화면에도 노출.
+          </p>
+        </Link>
+
         <Link
           href="/admin/orders"
           className="rounded-2xl border bg-white p-6 shadow-sm transition hover:shadow"
@@ -39,6 +66,7 @@ export default function AdminPage() {
             주문내역 확인 및 주문상태 변경이 가능합니다.
           </p>
         </Link>
+
         <Link
           href="/admin/members"
           className="rounded-2xl border bg-white p-6 shadow-sm transition hover:shadow"

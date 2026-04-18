@@ -265,26 +265,23 @@ export default function ProductForm({
           </label>
 
           <Field
-            label="Top 10 순위"
-            hint="같은 순위에 이미 다른 상품이 있으면, 저장 시 그 상품의 순위는 자동으로 비워집니다."
+            label="Top 순위 (1~100)"
+            hint="1~10위는 홈화면에도 노출되고, 11~100위는 Top 10 페이지에만 노출됩니다. 같은 순위에 다른 상품이 있으면 저장 시 그 상품의 순위는 자동으로 비워집니다. 여러 상품을 한꺼번에 지정할 때는 'Top 10 · 100 관리' 페이지를 사용하세요."
           >
-            <select
+            <input
+              type="number"
               name="top10_rank"
+              min={1}
+              max={100}
               defaultValue={
                 defaultValue?.top10_rank !== undefined &&
                 defaultValue?.top10_rank !== null
                   ? String(defaultValue.top10_rank)
                   : ''
               }
+              placeholder="비워두면 순위 없음"
               className={`${inputBase} md:w-60`}
-            >
-              <option value="">Top 10에 포함하지 않음</option>
-              {Array.from({ length: 10 }, (_, i) => i + 1).map((rank) => (
-                <option key={rank} value={rank}>
-                  {rank}위
-                </option>
-              ))}
-            </select>
+            />
           </Field>
         </div>
       </Section>

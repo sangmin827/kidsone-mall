@@ -48,6 +48,7 @@ export async function createCategory(formData: FormData) {
     throw new Error(`카테고리 등록 실패: ${error.message}`);
   }
 
+  revalidatePath('/admin/catalog');
   revalidatePath('/admin/categories');
   revalidatePath('/');
 }
@@ -80,7 +81,7 @@ export async function updateCategory(formData: FormData) {
     throw new Error('자기 자신을 상위 카테고리로 지정할 수 없습니다.');
   }
 
-  const { error } = await supabase
+  const { data: updatedRows, error } = await supabase
     .from('categories')
     .update({
       name,
@@ -90,7 +91,8 @@ export async function updateCategory(formData: FormData) {
       sort_order: Number.isNaN(sortOrder) ? 0 : sortOrder,
       is_active: isActive,
     })
-    .eq('id', id);
+    .eq('id', id)
+    .select('id');
 
   if (error) {
     if (error.code === '23505' || /duplicate|unique/i.test(error.message)) {
@@ -101,6 +103,13 @@ export async function updateCategory(formData: FormData) {
     throw new Error(`카테고리 수정 실패: ${error.message}`);
   }
 
+  if (!updatedRows || updatedRows.length === 0) {
+    throw new Error(
+      '카테고리 수정에 반영된 내역이 없습니다. 관리자 권한 (RLS 정책) 또는 삭제된 카테고리일 수 있어요.',
+    );
+  }
+
+  revalidatePath('/admin/catalog');
   revalidatePath('/admin/categories');
   revalidatePath('/');
 }
@@ -138,7 +147,11 @@ export async function deleteCategory(formData: FormData) {
     );
   }
 
-  const { error } = await supabase.from('categories').delete().eq('id', id);
+  const { data: deletedRows, error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', id)
+    .select('id');
 
   if (error) {
     // FK 위반 등 예외 상황
@@ -150,6 +163,13 @@ export async function deleteCategory(formData: FormData) {
     throw new Error(`카테고리 삭제 실패: ${error.message}`);
   }
 
+  if (!deletedRows || deletedRows.length === 0) {
+    throw new Error(
+      '카테고리 삭제에 반영된 내역이 없습니다. 관리자 권한 (RLS 정책) 또는 이미 삭제된 카테고리일 수 있어요.',
+    );
+  }
+
+  revalidatePath('/admin/catalog');
   revalidatePath('/admin/categories');
   revalidatePath('/');
 }
@@ -218,6 +238,7 @@ export async function moveCategory(formData: FormData) {
     .update({ sort_order: current.sort_order })
     .eq('id', other.id);
 
+  revalidatePath('/admin/catalog');
   revalidatePath('/admin/categories');
   revalidatePath('/');
 }
@@ -235,15 +256,23 @@ export async function toggleCategoryActive(formData: FormData) {
     throw new Error('카테고리 ID가 올바르지 않습니다.');
   }
 
-  const { error } = await supabase
+  const { data: updatedRows, error } = await supabase
     .from('categories')
     .update({ is_active: nextActive })
-    .eq('id', id);
+    .eq('id', id)
+    .select('id');
 
   if (error) {
     throw new Error(`카테고리 상태 변경 실패: ${error.message}`);
   }
 
+  if (!updatedRows || updatedRows.length === 0) {
+    throw new Error(
+      '카테고리 상태 변경에 반영된 내역이 없습니다. 관리자 권한 (RLS 정책) 또는 삭제된 카테고리일 수 있어요.',
+    );
+  }
+
+  revalidatePath('/admin/catalog');
   revalidatePath('/admin/categories');
   revalidatePath('/');
 }

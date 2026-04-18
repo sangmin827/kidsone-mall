@@ -13,8 +13,9 @@ function parseTop10Rank(raw: FormDataEntryValue | null): number | null {
 
   const parsed = Number(value);
   if (Number.isNaN(parsed)) return null;
-  if (parsed < 1 || parsed > 10) {
-    throw new Error('Top 10 순위는 1~10 사이여야 합니다.');
+  // 스키마 완화 이후 1~100 까지 허용 (1~10 은 홈화면, 11~100 은 Top 10 페이지 전용)
+  if (parsed < 1 || parsed > 100) {
+    throw new Error('Top 순위는 1~100 사이여야 합니다.');
   }
   return Math.trunc(parsed);
 }

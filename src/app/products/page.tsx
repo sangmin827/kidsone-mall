@@ -80,13 +80,14 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     }
   }
 
-  // Top 10: 관리자에서 top10_rank 를 설정한 상품만, 순위 오름차순
+  // Top 10 페이지: top10_rank 가 지정된 모든 상품 (1~100위) 을 순위순으로.
+  // 1~10위는 홈화면에도 노출되고, 이 페이지에서는 11~100위까지 풀로 보여준다.
   // 신상품(기본 sort=new): is_new 플래그가 켜진 상품 우선, 그 외는 생성 역순
   if (isTop10) {
     query = query
       .not("top10_rank", "is", null)
       .order("top10_rank", { ascending: true })
-      .limit(10);
+      .limit(100);
   } else if (sortKey === "new") {
     // is_new = true 먼저, 그 안에서 id 역순 (= 최근 등록 먼저)
     query = query

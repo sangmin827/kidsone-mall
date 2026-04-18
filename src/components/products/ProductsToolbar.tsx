@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const SORT_OPTIONS = [
   { value: "new", label: "신상품순" },
@@ -13,6 +13,7 @@ const SORT_OPTIONS = [
 
 export default function ProductsToolbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
@@ -37,7 +38,9 @@ export default function ProductsToolbar() {
       }
     });
     const qs = params.toString();
-    return qs ? `/products?${qs}` : "/products";
+    // 현재 경로를 유지 (/products, /categories/[slug] 어디에서든 그대로)
+    const base = pathname || "/products";
+    return qs ? `${base}?${qs}` : base;
   };
 
   const pushUrl = (patch: Record<string, string | null>) => {
@@ -53,10 +56,6 @@ export default function ProductsToolbar() {
 
   const handleSortChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     pushUrl({ sort: event.target.value });
-  };
-
-  const handleClearView = () => {
-    pushUrl({ view: null });
   };
 
   return (
@@ -94,30 +93,28 @@ export default function ProductsToolbar() {
       </form>
 
       <div className="flex items-center gap-3">
-        {currentView === "top10" && (
-          <button
-            type="button"
-            onClick={handleClearView}
-            className="rounded-full border border-gray-300 px-3 py-1 text-xs text-gray-600"
-            title="Top 10 필터 해제"
-          >
-            Top 10 × 해제
-          </button>
+        {currentView === "top10" ? (
+          // Top 10 페이지는 순위순이 본질. 해제 버튼 대신 고정 라벨만 노출.
+          <span className="rounded-full bg-rose-500 px-3 py-1 text-xs font-semibold text-white">
+            순위순 (고정)
+          </span>
+        ) : (
+          <>
+            <label className="text-sm text-gray-500">정렬</label>
+            <select
+              value={currentSort}
+              onChange={handleSortChange}
+              disabled={isPending}
+              className="rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </>
         )}
-
-        <label className="text-sm text-gray-500">정렬</label>
-        <select
-          value={currentSort}
-          onChange={handleSortChange}
-          disabled={isPending || currentView === "top10"}
-          className="rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-gray-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
-        >
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
       </div>
     </div>
   );
