@@ -5,7 +5,11 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 import { logout } from "@/src/app/logout/actions";
 
-export default function LogoutButton() {
+type LogoutButtonProps = {
+  className?: string;
+};
+
+export default function LogoutButton({ className }: LogoutButtonProps = {}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -37,7 +41,10 @@ export default function LogoutButton() {
       type="button"
       onClick={handleLogout}
       disabled={pending}
-      className="nav-actions disabled:cursor-not-allowed disabled:opacity-60"
+      className={
+        className ??
+        "nav-actions disabled:cursor-not-allowed disabled:opacity-60"
+      }
     >
       {pending ? "로그아웃 중..." : "로그아웃"}
     </button>

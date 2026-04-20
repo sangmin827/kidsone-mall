@@ -4,13 +4,13 @@ import { createClient } from "@/src/lib/supabase/server";
 import ProductPurchaseBox from "@/src/components/product/ProductPurchaseBox";
 import SoldOutBox from "@/src/components/product/SoldOutBox";
 import { getMyCart } from "@/src/server/cart";
+import Link from "next/link";
 
 type ProductImage = {
   image_url: string;
   is_thumbnail: boolean | null;
   sort_order: number | null;
 };
-
 type Product = {
   id: number;
   name: string;
@@ -26,35 +26,15 @@ type Product = {
 
 async function getProductBySlug(slug: string): Promise<Product | null> {
   const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("products")
     .select(
-      `
-      id,
-      name,
-      slug,
-      price,
-      short_description,
-      description,
-      stock,
-      is_sold_out,
-      hide_when_sold_out,
-      product_images (
-        image_url,
-        is_thumbnail,
-        sort_order
-      )
-      `,
+      `id, name, slug, price, short_description, description, stock, is_sold_out, hide_when_sold_out, product_images(image_url, is_thumbnail, sort_order)`,
     )
     .eq("slug", slug)
     .eq("is_active", true)
     .single();
-
-  if (error || !data) {
-    return null;
-  }
-
+  if (error || !data) return null;
   return data as Product;
 }
 
@@ -65,22 +45,14 @@ export default async function ProductDetailPage({
 }) {
   const { slug } = await params;
   const supabase = await createClient();
-
   const [{ data: authData }, product, cartResult] = await Promise.all([
     supabase.auth.getUser(),
     getProductBySlug(slug),
     getMyCart(),
   ]);
 
-  if (!product) {
-    notFound();
-  }
-
-  // 품절 + 목록숨김 옵션이 둘 다 켜진 경우엔 상세에서도 404 처리
-  // (관리자가 "안 보이게 하고 싶다"고 명시한 의도이므로)
-  if (product.is_sold_out && product.hide_when_sold_out) {
-    notFound();
-  }
+  if (!product) notFound();
+  if (product.is_sold_out && product.hide_when_sold_out) notFound();
 
   const cartItemCount = cartResult.items.length;
   const isLoggedIn = !!authData.user;
@@ -90,88 +62,173 @@ export default async function ProductDetailPage({
     product.product_images?.sort(
       (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999),
     ) ?? [];
-
   const mainImage =
     images.find((img) => img.is_thumbnail)?.image_url ??
     images[0]?.image_url ??
     "/placeholder.png";
 
   return (
-    <main className="min-h-screen bg-white">
-      <section className="mx-auto grid max-w-7xl gap-10 px-6 py-12 lg:grid-cols-2">
-        <div>
-          <div className="overflow-hidden rounded-2xl bg-gray-100">
-            <Image
-              src={mainImage}
-              alt={product.name}
-              width={800}
-              height={800}
-              className="h-auto w-full object-cover"
-              priority
-            />
+    <main className="min-h-screen bg-[#FAF9F6]">
+      {/* Breadcrumb */}
+      <div className="bg-white border-b border-[#E8E6E1]">
+        <div className="section-inner py-3">
+          <nav
+            className="flex items-center gap-2 text-xs text-[#9ca3af]"
+            aria-label="경로"
+          >
+            <Link href="/" className="hover:text-[#5332C9] transition-colors">
+              홈
+            </Link>
+            <span>/</span>
+            <Link
+              href="/products"
+              className="hover:text-[#5332C9] transition-colors"
+            >
+              상품목록
+            </Link>
+            <span>/</span>
+            <span className="text-[#222222] font-medium line-clamp-1 max-w-[200px]">
+              {product.name}
+            </span>
+          </nav>
+        </div>
+      </div>
+
+      <section className="section-inner py-8 sm:py-12">
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+          {/* Image Gallery */}
+          <div className="space-y-3">
+            <div className="overflow-hidden rounded-3xl bg-white border border-[#E8E6E1]">
+              <div className="relative aspect-square">
+                <Image
+                  src={mainImage}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+                {isSoldOut && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                    <span className="badge-sold-out text-sm px-4 py-1.5">
+                      품절
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+            {images.length > 1 && (
+              <div className="grid grid-cols-4 gap-2.5">
+                {images.map((img, i) => (
+                  <div
+                    key={`${img.image_url}-${i}`}
+                    className="overflow-hidden rounded-xl border border-[#E8E6E1] bg-white"
+                  >
+                    <div className="relative aspect-square">
+                      <Image
+                        src={img.image_url}
+                        alt={`${product.name} ${i + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="25vw"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {images.length > 1 && (
-            <div className="mt-4 grid grid-cols-4 gap-3">
-              {images.map((img, index) => (
-                <div
-                  key={`${img.image_url}-${index}`}
-                  className="overflow-hidden rounded-xl bg-gray-100"
-                >
-                  <Image
-                    src={img.image_url}
-                    alt={`${product.name} ${index + 1}`}
-                    width={200}
-                    height={200}
-                    className="h-24 w-full object-cover"
-                  />
+          {/* Product Info */}
+          <div className="space-y-5">
+            <div className="space-y-3">
+              {isSoldOut && <span className="badge-sold-out">품절</span>}
+              <h1 className="text-2xl font-bold leading-snug text-[#222222] sm:text-3xl">
+                {product.name}
+              </h1>
+              {product.short_description && (
+                <p className="text-base text-[#6b7280] leading-7">
+                  {product.short_description}
+                </p>
+              )}
+              <div className="rounded-2xl bg-white border border-[#E8E6E1] px-5 py-4">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black text-[#222222]">
+                    {product.price.toLocaleString()}
+                  </span>
+                  <span className="text-lg text-[#6b7280]">원</span>
+                </div>
+                <p className="mt-1 text-xs text-[#9ca3af]">무통장입금 결제</p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-white border border-[#E8E6E1] p-5">
+              {isSoldOut ? (
+                <SoldOutBox productId={product.id} />
+              ) : (
+                <ProductPurchaseBox
+                  productId={product.id}
+                  price={product.price}
+                  stock={product.stock ?? 0}
+                  cartItemCount={cartItemCount}
+                  isLoggedIn={isLoggedIn}
+                />
+              )}
+            </div>
+
+            <div className="rounded-2xl bg-[#FAF9F6] border border-[#E8E6E1] px-5 py-4 space-y-2">
+              {[
+                {
+                  icon: "🚚",
+                  text: "주문 확인 후 1~2주 정도 소요될수 있습니다",
+                },
+                {
+                  icon: "💳",
+                  text: "무통장입금 — 입금자명과 주문자명을 동일하게 입력해 주세요",
+                },
+                { icon: "🔒", text: "안전 인증 완료 제품" },
+              ].map((item) => (
+                <div key={item.text} className="flex items-start gap-2.5">
+                  <span className="text-base mt-0.5">{item.icon}</span>
+                  <span className="text-xs leading-5 text-[#6b7280]">
+                    {item.text}
+                  </span>
                 </div>
               ))}
             </div>
-          )}
+          </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-
-            {product.short_description && (
-              <p className="text-base text-gray-600">
-                {product.short_description}
-              </p>
-            )}
-
-            <p className="text-2xl font-bold text-gray-900">
-              {product.price.toLocaleString()}원
+        {/* Description */}
+        {product.description && (
+          <div className="mt-10 rounded-3xl border border-[#E8E6E1] bg-white p-6 sm:p-8">
+            <h2 className="mb-4 text-lg font-bold text-[#222222]">상품 설명</h2>
+            <div className="divider mb-5" />
+            <p className="whitespace-pre-line text-sm leading-8 text-[#6b7280]">
+              {product.description}
             </p>
-
-            {isSoldOut && (
-              <p className="inline-block rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">
-                품절
-              </p>
-            )}
           </div>
+        )}
 
-          {isSoldOut ? (
-            <SoldOutBox productId={product.id} />
-          ) : (
-            <ProductPurchaseBox
-              productId={product.id}
-              price={product.price}
-              stock={product.stock ?? 0}
-              cartItemCount={cartItemCount}
-              isLoggedIn={isLoggedIn}
-            />
-          )}
-
-          {product.description && (
-            <div className="rounded-2xl border border-gray-200 p-5">
-              <h2 className="mb-3 text-lg font-semibold">상품 설명</h2>
-              <p className="whitespace-pre-line text-sm leading-7 text-gray-700">
-                {product.description}
-              </p>
-            </div>
-          )}
+        <div className="mt-8">
+          <Link href="/products" className="btn-ghost inline-flex gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            상품목록으로 돌아가기
+          </Link>
         </div>
       </section>
     </main>

@@ -1,122 +1,184 @@
 @import "tailwindcss";
 
+/* ─── Fonts ─────────────────────────────────────────────── */
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Thin.woff2")
-    format("woff2");
-  font-weight: 100;
-  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Thin.woff2") format("woff2");
+  font-weight: 100; font-display: swap;
 }
-
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraLight.woff2")
-    format("woff2");
-  font-weight: 200;
-  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraLight.woff2") format("woff2");
+  font-weight: 200; font-display: swap;
 }
-
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Light.woff2")
-    format("woff2");
-  font-weight: 300;
-  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Light.woff2") format("woff2");
+  font-weight: 300; font-display: swap;
 }
-
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Regular.woff2")
-    format("woff2");
-  font-weight: 400;
-  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Regular.woff2") format("woff2");
+  font-weight: 400; font-display: swap;
 }
-
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Medium.woff2")
-    format("woff2");
-  font-weight: 500;
-  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Medium.woff2") format("woff2");
+  font-weight: 500; font-display: swap;
 }
-
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-SemiBold.woff2")
-    format("woff2");
-  font-weight: 600;
-  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-SemiBold.woff2") format("woff2");
+  font-weight: 600; font-display: swap;
 }
-
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Bold.woff2")
-    format("woff2");
-  font-weight: 700;
-  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Bold.woff2") format("woff2");
+  font-weight: 700; font-display: swap;
 }
-
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraBold.woff2")
-    format("woff2");
-  font-weight: 800;
-  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraBold.woff2") format("woff2");
+  font-weight: 800; font-display: swap;
 }
-
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Black.woff2")
-    format("woff2");
-  font-weight: 900;
-  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Black.woff2") format("woff2");
+  font-weight: 900; font-display: swap;
 }
-
 @font-face {
   font-family: "GMarketSans";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansLight.woff")
-    format("woff");
-  font-weight: 300;
-  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansLight.woff") format("woff");
+  font-weight: 300; font-display: swap;
 }
-
 @font-face {
   font-family: "GMarketSans";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff")
-    format("woff");
-  font-weight: 500;
-  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff") format("woff");
+  font-weight: 500; font-display: swap;
 }
-
 @font-face {
   font-family: "GMarketSans";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff")
-    format("woff");
-  font-weight: 700;
-  font-display: swap;
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff") format("woff");
+  font-weight: 700; font-display: swap;
 }
 
+/* ─── Design Tokens ─────────────────────────────────────── */
 @theme {
   --font-pretendard: "Pretendard", sans-serif;
-  --font-gmarket: "GmarketSans", sans-serif;
+  --font-gmarket: "GMarketSans", sans-serif;
+
+  /* Brand Colors */
+  --color-brand-primary:        #5332C9;
+  --color-brand-primary-hover:  #4427b0;
+  --color-brand-primary-light:  #ede9fb;
+  --color-brand-secondary:      #FF5555;
+  --color-brand-secondary-hover:#e84444;
+  --color-brand-accent:         #D4AF37;
+  --color-brand-bg:             #FAF9F6;
+  --color-brand-text:           #222222;
+  --color-brand-muted:          #6b7280;
+  --color-brand-border:         #E8E6E1;
+  --color-brand-card:           #FFFFFF;
 }
+
+/* ─── Scrollbar Hide ─────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Base ───────────────────────────────────────────────── */
+html { scroll-behavior: smooth; }
 
 body {
   font-family: "Pretendard", sans-serif;
+  background-color: #FAF9F6;
+  color: #222222;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* ─── Focus Ring ─────────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid #5332C9;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ─── Nav Utilities ──────────────────────────────────────── */
+.nav-link {
+  @apply text-sm font-medium text-[#222222] transition-colors duration-150 hover:text-[#5332C9];
+}
+.nav-action {
+  @apply text-sm font-medium text-[#6b7280] transition-colors duration-150 hover:text-[#5332C9] cursor-pointer;
+}
+/* legacy compat — @apply로 커스텀 클래스 참조 불가(Tailwind v4), 직접 정의 */
 .nav-text {
-  @apply text-base font-medium hover:text-blue-500;
+  @apply text-sm font-medium text-[#222222] transition-colors duration-150 hover:text-[#5332C9];
 }
-
 .nav-actions {
-  @apply text-gray-500 hover:text-blue-500 cursor-pointer;
+  @apply text-sm font-medium text-[#6b7280] transition-colors duration-150 hover:text-[#5332C9] cursor-pointer;
 }
 
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+/* ─── Button System ──────────────────────────────────────── */
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-xl bg-[#FF5555] px-5 py-3 text-sm font-semibold text-white
+    transition-all duration-150 hover:bg-[#e84444] active:scale-[0.98]
+    disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-[#FF5555]/40;
+}
+.btn-outline {
+  @apply inline-flex items-center justify-center rounded-xl border border-[#5332C9] bg-transparent px-5 py-3 text-sm font-semibold text-[#5332C9]
+    transition-all duration-150 hover:bg-[#ede9fb] active:scale-[0.98]
+    disabled:opacity-50 disabled:pointer-events-none;
+}
+.btn-ghost {
+  @apply inline-flex items-center justify-center rounded-xl border border-[#E8E6E1] bg-white px-5 py-3 text-sm font-medium text-[#222222]
+    transition-all duration-150 hover:border-[#5332C9] hover:text-[#5332C9] active:scale-[0.98]
+    disabled:opacity-50 disabled:pointer-events-none;
+}
+.btn-danger {
+  @apply inline-flex items-center justify-center rounded-xl border border-transparent bg-transparent px-3 py-2 text-sm font-medium text-[#FF5555]
+    transition-all duration-150 hover:bg-red-50 active:scale-[0.98]
+    disabled:opacity-50 disabled:pointer-events-none;
 }
 
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+/* ─── Card System ────────────────────────────────────────── */
+.card {
+  @apply rounded-2xl bg-white border border-[#E8E6E1];
 }
+/* card-interactive: @apply card 불가(커스텀 클래스) → 직접 풀어서 정의 */
+.card-interactive {
+  @apply rounded-2xl bg-white border border-[#E8E6E1] transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5;
+}
+
+/* ─── Input System ───────────────────────────────────────── */
+.input-base {
+  @apply w-full rounded-xl border border-[#E8E6E1] bg-white px-4 py-3 text-sm text-[#222222]
+    placeholder:text-[#9ca3af] outline-none transition-all duration-150
+    focus:border-[#5332C9] focus:ring-2 focus:ring-[#5332C9]/15;
+}
+
+/* ─── Badge System ───────────────────────────────────────── */
+.badge-new {
+  @apply inline-flex items-center rounded-full bg-[#5332C9] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm;
+}
+.badge-top {
+  @apply inline-flex items-center rounded-full bg-[#FF5555] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm;
+}
+.badge-sold-out {
+  @apply inline-flex items-center rounded-full bg-[#6b7280] px-2.5 py-0.5 text-[10px] font-semibold text-white;
+}
+
+/* ─── Skeleton UI ────────────────────────────────────────── */
+.skeleton {
+  @apply animate-pulse rounded-xl bg-[#e8e6e1];
+}
+
+/* ─── Section ────────────────────────────────────────────── */
+.section-inner { @apply mx-auto max-w-7xl px-4 sm:px-6; }
+.section-title  { @apply text-2xl font-bold text-[#222222] sm:text-3xl font-gmarket; }
+
+/* ─── Divider ────────────────────────────────────────────── */
+.divider { @apply border-t border-[#E8E6E1]; }
+
+/* ─── Scrollbar Hide ─────────────────────────────────────── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
