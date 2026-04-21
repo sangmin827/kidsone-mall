@@ -38,13 +38,10 @@ export default function AdminOrdersMobileFilter({
   const [isOpen, setIsOpen] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  /* 애니메이션: open → visible 딜레이 */
+  /* 애니메이션: isOpen 변경 → 다음 프레임에서 visible 동기화 */
   useEffect(() => {
-    if (isOpen) {
-      requestAnimationFrame(() => setVisible(true));
-    } else {
-      setVisible(false);
-    }
+    const id = requestAnimationFrame(() => setVisible(isOpen));
+    return () => cancelAnimationFrame(id);
   }, [isOpen]);
 
   /* 열려 있을 때 body 스크롤 막기 */

@@ -28,22 +28,35 @@ export default async function AdminLayout({
   }
 
   // 사이드바 배지용 카운트 (병렬 조회)
-  const [{ count: pendingOrderCount }, { count: pendingPurchaseCount }] =
-    await Promise.all([
-      supabase
-        .from("orders")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "pending"),
-      supabase
-        .from("purchase_requests")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "pending"),
-    ]);
+  const [
+    { count: pendingOrderCount },
+    { count: pendingPurchaseCount },
+    { count: cancelRequestCount },
+    { count: returnRequestCount },
+  ] = await Promise.all([
+    supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending"),
+    supabase
+      .from("purchase_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending"),
+    supabase
+      .from("cancel_requests")
+      .select("*", { count: "exact", head: true })
+      .in("status", ["requested", "withdraw_requested"]),
+    supabase
+      .from("return_requests")
+      .select("*", { count: "exact", head: true })
+      .in("status", ["requested", "withdraw_requested"]),
+  ]);
 
   return (
     <AdminShell
       pendingOrderCount={pendingOrderCount ?? 0}
       pendingPurchaseCount={pendingPurchaseCount ?? 0}
+      cancelRequestCount={(cancelRequestCount ?? 0) + (returnRequestCount ?? 0)}
     >
       {children}
     </AdminShell>

@@ -33,9 +33,22 @@ function isGroup(e: NavEntry): e is NavGroup {
 
 const NAV: NavEntry[] = [
   {
+    id: "dashboard",
+    label: "대시보드",
+    href: "/admin",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+        <rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+    ),
+  },
+  {
     id: "orders",
     label: "주문 관리",
-    dotKey: "pendingPurchaseCount",
+    dotKey: "cancelRequestCount",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
@@ -46,6 +59,7 @@ const NAV: NavEntry[] = [
     items: [
       { label: "주문 내역 관리", href: "/admin/orders" },
       { label: "구매 희망 요청", href: "/admin/purchase-requests", badgeKey: "pendingPurchaseCount" },
+      { label: "취소/반품 관리", href: "/admin/cancel-returns", badgeKey: "cancelRequestCount" },
     ],
   },
   {
@@ -101,6 +115,7 @@ type Props = {
   onToggleCollapse: () => void;
   pendingOrderCount: number;
   pendingPurchaseCount: number;
+  cancelRequestCount: number;
 };
 
 export default function AdminSidebar({
@@ -108,12 +123,14 @@ export default function AdminSidebar({
   onToggleCollapse,
   pendingOrderCount,
   pendingPurchaseCount,
+  cancelRequestCount,
 }: Props) {
   const pathname = usePathname();
 
   const counts: Record<string, number> = {
     pendingOrderCount,
     pendingPurchaseCount,
+    cancelRequestCount,
   };
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
@@ -131,6 +148,7 @@ export default function AdminSidebar({
   }
 
   function isActive(href: string) {
+    if (href === "/admin") return pathname === "/admin";
     if (href === "/admin/orders") return pathname === "/admin/orders" || pathname.startsWith("/admin/orders/");
     if (href === "/admin/members") return pathname === "/admin/members" || pathname.startsWith("/admin/members/");
     return pathname.startsWith(href);

@@ -7,12 +7,14 @@ type Props = {
   children: React.ReactNode;
   pendingOrderCount: number;
   pendingPurchaseCount: number;
+  cancelRequestCount: number;
 };
 
 export default function AdminShell({
   children,
   pendingOrderCount,
   pendingPurchaseCount,
+  cancelRequestCount,
 }: Props) {
   // 모바일(768px 미만)에서는 기본으로 접힌 상태로 시작
   const [collapsed, setCollapsed] = useState(false);
@@ -32,6 +34,7 @@ export default function AdminShell({
         onToggleCollapse={() => setCollapsed((v) => !v)}
         pendingOrderCount={pendingOrderCount}
         pendingPurchaseCount={pendingPurchaseCount}
+        cancelRequestCount={cancelRequestCount}
       />
 
       {/* 우측: 상단바 + 콘텐츠 */}

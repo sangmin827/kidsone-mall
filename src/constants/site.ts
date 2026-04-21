@@ -2,7 +2,7 @@
 // 이 파일 한 곳만 수정하면 Footer, 주문완료, 환불정책 등 모든 곳에 반영됩니다.
 
 // 카카오 채널 URL — 예) "https://pf.kakao.com/_xxxxx"
-export const KAKAO_CHANNEL_URL = "YOUR_KAKAO_CHANNEL_URL";
+export const KAKAO_CHANNEL_URL = "http://pf.kakao.com/_xfaljX/chat";
 
 // 사이트 기본 메타 정보
 export const SITE_NAME = "Kids One Mall";

@@ -12,6 +12,36 @@ export type MyOrderItem = {
   quantity: number;
 };
 
+export type CancelRequest = {
+  id: number;
+  type: "full" | "partial";
+  status:
+    | "requested"
+    | "completed"
+    | "rejected"
+    | "withdraw_requested"
+    | "withdraw_completed";
+  reason: string | null;
+  refund_bank: string | null;
+  refund_account_number: string | null;
+  refund_account_name: string | null;
+  created_at: string;
+};
+
+export type ReturnRequest = {
+  id: number;
+  type: "full" | "partial";
+  status:
+    | "requested"
+    | "picked_up"
+    | "completed"
+    | "rejected"
+    | "withdraw_requested"
+    | "withdraw_completed";
+  reason: string | null;
+  created_at: string;
+};
+
 export type MyOrder = {
   id: number;
   order_number: string;
@@ -36,6 +66,8 @@ export type MyOrder = {
   request_message: string | null;
   created_at: string;
   order_items: MyOrderItem[];
+  cancel_request: CancelRequest | null;
+  return_request: ReturnRequest | null;
 };
 
 export type GuestLookupOrder = {
@@ -207,6 +239,23 @@ export async function getMyOrders(): Promise<MyOrder[]> {
         product_name_snapshot,
         price_snapshot,
         quantity
+      ),
+      cancel_requests (
+        id,
+        type,
+        status,
+        reason,
+        refund_bank,
+        refund_account_number,
+        refund_account_name,
+        created_at
+      ),
+      return_requests (
+        id,
+        type,
+        status,
+        reason,
+        created_at
       )
     `,
     )
@@ -217,7 +266,15 @@ export async function getMyOrders(): Promise<MyOrder[]> {
     throw new Error(`주문내역 조회 실패: ${error.message}`);
   }
 
-  return (data ?? []) as MyOrder[];
+  // Supabase returns nested arrays; normalize to single objects
+  return ((data ?? []) as (Omit<MyOrder, "cancel_request" | "return_request"> & {
+    cancel_requests: CancelRequest[];
+    return_requests: ReturnRequest[];
+  })[]).map((row) => ({
+    ...row,
+    cancel_request: row.cancel_requests?.[0] ?? null,
+    return_request: row.return_requests?.[0] ?? null,
+  })) as MyOrder[];
 }
 
 async function createMemberOrder(
@@ -946,7 +1003,7 @@ export async function updateOrderMemo(formData: FormData) {
     .eq("id", orderId);
 
   if (error) {
-    throw new Error(`메모 저장 실패: ${error.message}`);
+    throw new Error(`\uBA54\ubaa8 \uc800\uc7a5 \uc2e4\ud328: ${error.message}`);
   }
 
   revalidatePath("/admin/orders");
