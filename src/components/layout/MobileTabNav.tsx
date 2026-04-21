@@ -19,8 +19,8 @@ export default function MobileTabNav({ categories }: MobileTabNavProps) {
   // 탭 활성 상태 판단
   const isNewView    = pathname === "/products" && view === "new";
   const isTop10View  = pathname === "/products" && view === "top10";
-  const isSets       = pathname === "/categories/sets";
-  // /products (전체) + /categories/[slug] (세트 제외) 모두 '전체상품' 탭 활성
+  const isSets       = pathname === "/sets";
+  // /products (전체) + /categories/[slug] 모두 '전체상품' 탭 활성
   const isAllProducts =
     (!isNewView && !isTop10View && !isSets) &&
     (pathname === "/products" || pathname.startsWith("/categories/"));
@@ -33,7 +33,7 @@ export default function MobileTabNav({ categories }: MobileTabNavProps) {
   //   /products?category=xxx   → categoryParam
   //   /categories/xxx          → path 에서 추출
   const pathSlug =
-    pathname.startsWith("/categories/") && pathname !== "/categories/sets"
+    pathname.startsWith("/categories/")
       ? pathname.replace("/categories/", "")
       : null;
   const activeCategorySlug = categoryParam || pathSlug || "";
@@ -60,7 +60,7 @@ export default function MobileTabNav({ categories }: MobileTabNavProps) {
         <Link href="/products?view=new"   className={tabCls(isNewView)}>신상품</Link>
         <Link href="/products?view=top10" className={tabCls(isTop10View)}>Top 10</Link>
         <Link href="/products"            className={tabCls(isAllProducts)}>전체상품</Link>
-        <Link href="/categories/sets"     className={tabCls(isSets)}>세트상품</Link>
+        <Link href="/sets"                 className={tabCls(isSets)}>세트상품</Link>
       </div>
 
       {/* ── 하위 카테고리 칩 (전체상품 탭 선택 시) ── */}

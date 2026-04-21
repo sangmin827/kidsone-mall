@@ -72,6 +72,7 @@ export async function createProduct(formData: FormData) {
   const categoryId = parseNullableInt(formData.get('category_id'));
   const isActive = formData.get('is_active') === 'on';
   const isNew = formData.get('is_new') === 'on';
+  const isSet = formData.get('is_set') === 'on';
   const top10Rank = parseTop10Rank(formData.get('top10_rank'));
   const isSoldOut = formData.get('is_sold_out') === 'on';
   const hideWhenSoldOut = formData.get('hide_when_sold_out') === 'on';
@@ -82,10 +83,6 @@ export async function createProduct(formData: FormData) {
 
   if (!slug) {
     throw new Error('슬러그를 입력해주세요.');
-  }
-
-  if (categoryId === null) {
-    throw new Error('카테고리를 선택해 주세요.');
   }
 
   const supabase = await createClient();
@@ -104,6 +101,7 @@ export async function createProduct(formData: FormData) {
     category_id: categoryId,
     is_active: isActive,
     is_new: isNew,
+    is_set: isSet,
     top10_rank: top10Rank,
     is_sold_out: isSoldOut,
     hide_when_sold_out: hideWhenSoldOut,
@@ -129,7 +127,9 @@ export async function createProduct(formData: FormData) {
   });
 
   revalidatePath('/admin/products');
+  revalidatePath('/admin/products/sets');
   revalidatePath('/products');
+  revalidatePath('/sets');
 }
 
 export async function updateProduct(formData: FormData) {
@@ -145,6 +145,7 @@ export async function updateProduct(formData: FormData) {
   const categoryId = parseNullableInt(formData.get('category_id'));
   const isActive = formData.get('is_active') === 'on';
   const isNew = formData.get('is_new') === 'on';
+  const isSet = formData.get('is_set') === 'on';
   const top10Rank = parseTop10Rank(formData.get('top10_rank'));
   const isSoldOut = formData.get('is_sold_out') === 'on';
   const hideWhenSoldOut = formData.get('hide_when_sold_out') === 'on';
@@ -159,10 +160,6 @@ export async function updateProduct(formData: FormData) {
 
   if (!slug) {
     throw new Error('슬러그를 입력해주세요.');
-  }
-
-  if (categoryId === null) {
-    throw new Error('카테고리를 선택해 주세요.');
   }
 
   const supabase = await createClient();
@@ -183,6 +180,7 @@ export async function updateProduct(formData: FormData) {
     category_id: categoryId,
     is_active: isActive,
     is_new: isNew,
+    is_set: isSet,
     top10_rank: top10Rank,
     is_sold_out: isSoldOut,
     hide_when_sold_out: hideWhenSoldOut,
@@ -209,7 +207,9 @@ export async function updateProduct(formData: FormData) {
 
   revalidatePath('/admin/products');
   revalidatePath(`/admin/products/${id}`);
+  revalidatePath('/admin/products/sets');
   revalidatePath('/products');
+  revalidatePath('/sets');
 }
 
 export async function deleteProduct(formData: FormData) {
@@ -253,5 +253,7 @@ export async function deleteProduct(formData: FormData) {
   });
 
   revalidatePath('/admin/products');
+  revalidatePath('/admin/products/sets');
   revalidatePath('/products');
+  revalidatePath('/sets');
 }

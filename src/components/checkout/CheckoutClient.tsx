@@ -9,6 +9,7 @@ import type {
   CheckoutItem,
   SavedAddress,
 } from "@/src/server/checkout";
+import type { SaveAddressRequest } from "@/src/types/address";
 import { toast } from "sonner";
 import { addToCartAction } from "@/src/app/products/[slug]/actions";
 
@@ -310,29 +311,20 @@ export default function CheckoutClient({
         }
 
         if (saveNewAddress) {
+          // SaveAddressRequest 타입으로 명시 → 필드명 불일치를 TypeScript가 컴파일 시점에 감지
+          const savePayload: SaveAddressRequest = {
+            recipient_name,
+            recipient_phone,
+            recipient_phone_extra,
+            postal_code: zip_code,
+            address_main: address,
+            address_detail: detail_address,
+            memo: request_message,
+          };
           const addressRes = await fetch("/api/addresses", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              recipient_name,
-              recipient_phone,
-              recipient_phone_extra,
-              zip_code,
-              address,
-              detail_address,
-              request_message,
-              orderer_name: isLoggedIn
-                ? undefined
-                : orderer.orderer_name.trim(),
-              orderer_phone: isLoggedIn
-                ? undefined
-                : orderer.orderer_phone.trim(),
-              orderer_email: isLoggedIn
-                ? undefined
-                : orderer.orderer_email.trim(),
-            }),
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(savePayload),
           });
 
           const addressData = await addressRes.json();
@@ -401,7 +393,7 @@ export default function CheckoutClient({
 
       toast.success("주문이 완료되었습니다!", { id: toastId, duration: 1500 });
       if (isLoggedIn) {
-        router.push("/mypage/orders");
+        router.push(`/checkout/complete?orderNumber=${encodeURIComponent(orderData.order.order_number)}`);
       } else {
         router.push(
           `/guest-order/complete?orderNumber=${encodeURIComponent(orderData.order.order_number)}&phone=${encodeURIComponent(orderer.orderer_phone.trim())}`,

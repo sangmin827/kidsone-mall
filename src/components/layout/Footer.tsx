@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { KAKAO_CHANNEL_URL } from "@/src/constants/site";
 
 /**
  * 사이트 푸터.
  * ⚠️ 사업자정보 placeholder — 이상민님이 직접 채워주세요.
+ * ✏️ 카카오 채널 URL 변경은 src/constants/site.ts 에서 하세요.
  */
+
 export default function Footer() {
   return (
     <footer className="mt-12 border-t border-[#E8E6E1] bg-white">
@@ -24,6 +27,10 @@ export default function Footer() {
               <Link href="/privacy" className="font-semibold text-[#222222] hover:text-[#5332C9] transition-colors">
                 개인정보처리방침
               </Link>
+              <span className="text-[#E8E6E1]">|</span>
+              <Link href="/refund" className="text-[#6b7280] hover:text-[#5332C9] transition-colors">
+                환불/교환 정책
+              </Link>
             </div>
             <p className="pt-1 text-[11px] leading-5 text-[#9ca3af]">
               모든 결제는 무통장 입금으로 진행됩니다.<br />
@@ -43,10 +50,22 @@ export default function Footer() {
           </div>
 
           {/* 고객센터 */}
-          <div className="space-y-1 text-xs leading-6 text-[#6b7280]">
-            <p className="mb-2 text-sm font-semibold text-[#222222]">고객센터</p>
-            {/* TODO: 실제 연락처 입력 */}
-            <p>카카오톡 1:1 : <span className="text-[#9ca3af]">(카카오톡 아이디)</span></p>
+          <div className="space-y-2 text-xs leading-6 text-[#6b7280]">
+            <p className="mb-1 text-sm font-semibold text-[#222222]">고객센터</p>
+
+            {/* 카카오 채널 버튼 */}
+            <a
+              href={KAKAO_CHANNEL_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#FEE500] px-4 py-2.5 text-xs font-bold text-[#3C1E1E] transition-opacity hover:opacity-90"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2C6.48 2 2 5.92 2 10.8c0 3.09 1.73 5.8 4.37 7.43-.19.68-.69 2.46-.79 2.85-.13.48.18.47.38.34.16-.1 2.53-1.72 3.56-2.42.81.12 1.63.18 2.48.18 5.52 0 10-3.92 10-8.8C22 5.92 17.52 2 12 2z"/>
+              </svg>
+              카카오톡 1:1 문의
+            </a>
+
             <p>전화번호 : <span className="text-[#9ca3af]">(전화번호 입력)</span></p>
             <p>이메일 : <span className="text-[#9ca3af]">(contact@example.com)</span></p>
             <p className="text-[#9ca3af]">

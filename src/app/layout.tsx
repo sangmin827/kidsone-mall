@@ -49,6 +49,23 @@ export default async function RootLayout({
     profile = data;
   }
 
+  // 헤더 장바구니 배지용 카운트
+  let cartItemCount = 0;
+  if (user) {
+    const { data: cartRow } = await supabase
+      .from("carts")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (cartRow) {
+      const { count } = await supabase
+        .from("cart_items")
+        .select("*", { count: "exact", head: true })
+        .eq("cart_id", cartRow.id);
+      cartItemCount = count ?? 0;
+    }
+  }
+
   return (
     <html lang="ko">
       <body className="bg-[#FAF9F6] text-[#222222] antialiased">
@@ -84,12 +101,12 @@ export default async function RootLayout({
               {user ? (
                 /* ── 로그인 상태 ── */
                 <>
-                  {/* 장바구니 → /mypage/cart */}
+                  {/* 장바구니 → /mypage/cart (배지 포함) */}
                   <Link
                     href="/mypage/cart"
                     title="장바구니"
                     aria-label="장바구니"
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6b7280] transition-colors hover:bg-[#FAF9F6] hover:text-[#5332C9]"
+                    className="relative flex h-9 w-9 items-center justify-center rounded-xl text-[#6b7280] transition-colors hover:bg-[#FAF9F6] hover:text-[#5332C9]"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -107,6 +124,11 @@ export default async function RootLayout({
                       <circle cx="19" cy="21" r="1" />
                       <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
                     </svg>
+                    {cartItemCount > 0 && (
+                      <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF5555] text-[9px] font-bold text-white shadow-sm">
+                        {cartItemCount > 9 ? "9+" : cartItemCount}
+                      </span>
+                    )}
                   </Link>
 
                   {/* 마이페이지 — 꽉 찬 보라색 사람 아이콘 */}
@@ -197,12 +219,12 @@ export default async function RootLayout({
 
               {user ? (
                 <>
-                  {/* 장바구니 */}
+                  {/* 장바구니 (배지 포함) */}
                   <Link
                     href="/mypage/cart"
                     title="장바구니"
                     aria-label="장바구니"
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6b7280] transition-colors hover:bg-[#FAF9F6] hover:text-[#5332C9]"
+                    className="relative flex h-9 w-9 items-center justify-center rounded-xl text-[#6b7280] transition-colors hover:bg-[#FAF9F6] hover:text-[#5332C9]"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -220,6 +242,11 @@ export default async function RootLayout({
                       <circle cx="19" cy="21" r="1" />
                       <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
                     </svg>
+                    {cartItemCount > 0 && (
+                      <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF5555] text-[9px] font-bold text-white shadow-sm">
+                        {cartItemCount > 9 ? "9+" : cartItemCount}
+                      </span>
+                    )}
                   </Link>
 
                   {/* 마이페이지 */}

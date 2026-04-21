@@ -131,7 +131,7 @@ export default async function AdminMemberDetailPage({
 
           <button
             type="submit"
-            className="rounded-xl bg-black px-4 py-2 text-white"
+            className="rounded-xl bg-[#5332C9] px-4 py-2 text-white"
           >
             저장
           </button>
@@ -142,7 +142,7 @@ export default async function AdminMemberDetailPage({
         <h2 className="mb-4 text-lg font-semibold">배송지 목록</h2>
         <div className="space-y-3">
           {member.addresses.length === 0 ? (
-            <p className="text-sm text-gray-500">등록된 배송지가 없습니다.</p>
+            <p className="text-sm text-[#6b7280]">등록된 배송지가 없습니다.</p>
           ) : (
             member.addresses.map((address) => (
               <div key={address.id} className="rounded-xl border p-4 text-sm">
@@ -156,7 +156,7 @@ export default async function AdminMemberDetailPage({
                   ({address.postal_code ?? "-"}) {address.address_main}{" "}
                   {address.address_detail ?? ""}
                 </p>
-                <p className="mt-1 text-gray-500">
+                <p className="mt-1 text-[#6b7280]">
                   메모: {address.memo ?? "-"}
                 </p>
               </div>
@@ -182,7 +182,7 @@ export default async function AdminMemberDetailPage({
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-3 py-6 text-center text-gray-500"
+                    className="px-3 py-6 text-center text-[#6b7280]"
                   >
                     주문 내역이 없습니다.
                   </td>

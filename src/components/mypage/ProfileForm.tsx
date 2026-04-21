@@ -10,8 +10,18 @@ type Props = {
   profile: MyProfile;
 };
 
+function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+}
+
 export default function ProfileForm({ profile }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phoneValue, setPhoneValue] = useState(
+    formatPhone(profile.phone ?? ""),
+  );
   const delayToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -124,8 +134,10 @@ export default function ProfileForm({ profile }: Props) {
           <input
             id="phone"
             name="phone"
-            defaultValue={profile.phone ?? ""}
-            placeholder="연락처를 입력하세요"
+            value={phoneValue}
+            onChange={(e) => setPhoneValue(formatPhone(e.target.value))}
+            placeholder="010-1234-5678"
+            inputMode="tel"
             className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
           />
         </div>

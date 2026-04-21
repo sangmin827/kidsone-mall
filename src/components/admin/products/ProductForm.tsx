@@ -117,8 +117,7 @@ export default function ProductForm({
 
           <Field
             label="카테고리"
-            required
-            hint="상품은 반드시 하나의 카테고리에 속해야 합니다."
+            hint="카테고리를 선택하면 전체상품에서 해당 카테고리로 분류됩니다. 세트상품은 카테고리 없이도 등록 가능합니다."
           >
             <select
               name="category_id"
@@ -129,7 +128,6 @@ export default function ProductForm({
                   : ''
               }
               className={inputBase}
-              required
             >
               <option value="" disabled>
                 카테고리를 선택해 주세요
@@ -260,6 +258,21 @@ export default function ProductForm({
               <strong className="font-medium">신상품으로 표시</strong>
               <span className="block text-xs text-gray-500">
                 메인의 &lsquo;신상품&rsquo; 메뉴에 노출됩니다.
+              </span>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="is_set"
+              defaultChecked={defaultValue?.is_set ?? false}
+              className="mt-0.5"
+            />
+            <span>
+              <strong className="font-medium">세트상품으로 등록</strong>
+              <span className="block text-xs text-gray-500">
+                체크 시 &lsquo;세트상품&rsquo; 전용 페이지에 노출되며, 전체상품 목록에서는 제외됩니다.
               </span>
             </span>
           </label>

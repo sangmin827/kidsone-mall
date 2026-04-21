@@ -3,57 +3,37 @@ import type { AdminProduct } from '@/src/server/admin-products';
 import type { AdminCategory } from '@/src/server/admin-categories';
 
 const PRODUCT_COLUMNS =
-  'id, name, slug, price, stock, short_description, description, category_id, is_active, is_new, top10_rank, is_sold_out, hide_when_sold_out, created_at';
+  'id, name, slug, price, stock, short_description, description, category_id, is_active, is_new, is_set, top10_rank, is_sold_out, hide_when_sold_out, created_at';
 
 /**
- * "세트상품" (slug = 'sets') 카테고리 + 그 하위 카테고리에 속한 상품들만 조회.
- *
- * 세트 카테고리가 없으면 빈 배열 반환 (관리자에게 안내).
+ * is_set = true 인 상품들을 조회 (카테고리와 무관).
+ * 관리자 세트 상품 관리 페이지에서 사용.
  */
 export async function getSetProducts(): Promise<{
-  setCategory: AdminCategory | null;
-  setCategories: AdminCategory[];
   products: AdminProduct[];
+  categories: AdminCategory[];
 }> {
   const { supabase } = await requireAdmin();
 
-  const { data: categories, error: catError } = await supabase
-    .from('categories')
-    .select('*')
-    .order('sort_order', { ascending: true });
+  const [productsResult, categoriesResult] = await Promise.all([
+    supabase
+      .from('products')
+      .select(PRODUCT_COLUMNS)
+      .eq('is_set', true)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order', { ascending: true }),
+  ]);
 
-  if (catError) {
-    throw new Error(`카테고리 조회 실패: ${catError.message}`);
-  }
-
-  const list = (categories ?? []) as AdminCategory[];
-  const setRoot = list.find((c) => c.slug === 'sets') ?? null;
-
-  if (!setRoot) {
-    return { setCategory: null, setCategories: [], products: [] };
-  }
-
-  // sets 카테고리 + 그 직계 자식
-  const setCategories = list.filter(
-    (c) => c.id === setRoot.id || c.parent_id === setRoot.id,
-  );
-
-  const setCatIds = setCategories.map((c) => c.id);
-
-  const { data: products, error: prodError } = await supabase
-    .from('products')
-    .select(PRODUCT_COLUMNS)
-    .in('category_id', setCatIds)
-    .order('created_at', { ascending: false });
-
-  if (prodError) {
-    throw new Error(`세트 상품 조회 실패: ${prodError.message}`);
+  if (productsResult.error) {
+    throw new Error(`세트 상품 조회 실패: ${productsResult.error.message}`);
   }
 
   return {
-    setCategory: setRoot,
-    setCategories,
-    products: (products ?? []) as AdminProduct[],
+    products: (productsResult.data ?? []) as AdminProduct[],
+    categories: (categoriesResult.data ?? []) as AdminCategory[],
   };
 }
 

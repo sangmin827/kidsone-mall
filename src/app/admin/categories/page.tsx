@@ -8,7 +8,7 @@ export default async function AdminCategoriesPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold">카테고리 관리</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-[#6b7280]">
           상위 카테고리(대분류) 아래에 하위 카테고리(중분류)를 붙여서 2단계
           구조로 관리합니다. 각 카드에서 직접 수정·순서변경·노출 토글·삭제가
           가능합니다.

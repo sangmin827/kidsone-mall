@@ -11,7 +11,6 @@ export default async function CategoryMenu() {
     .order("sort_order", { ascending: true })
     .order("id", { ascending: true });
 
-  const setCategory = categories?.find((c) => c.slug === "sets");
   const overviewChildren = (categories ?? []).filter(
     (c) => c.level === 1 && c.slug !== "sets",
   );
@@ -77,19 +76,9 @@ export default async function CategoryMenu() {
         )}
       </div>
 
-      {setCategory ? (
-        <Link href={`/categories/${setCategory.slug}`} className={linkCls}>
-          {setCategory.name}
-        </Link>
-      ) : (
-        <Link
-          href="/products?category=sets"
-          className="whitespace-nowrap text-sm font-medium text-[#9ca3af] transition-colors hover:text-[#5332C9]"
-          title="관리자에서 '세트상품' 카테고리를 등록해 주세요."
-        >
-          세트상품
-        </Link>
-      )}
+      <Link href="/sets" className={linkCls}>
+        세트상품
+      </Link>
     </nav>
   );
 }

@@ -1,8 +1,8 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/server";
 import ProductPurchaseBox from "@/src/components/product/ProductPurchaseBox";
 import SoldOutBox from "@/src/components/product/SoldOutBox";
+import ProductImageGallery from "@/src/components/product/ProductImageGallery";
 import { getMyCart } from "@/src/server/cart";
 import Link from "next/link";
 
@@ -62,10 +62,6 @@ export default async function ProductDetailPage({
     product.product_images?.sort(
       (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999),
     ) ?? [];
-  const mainImage =
-    images.find((img) => img.is_thumbnail)?.image_url ??
-    images[0]?.image_url ??
-    "/placeholder.png";
 
   return (
     <main className="min-h-screen bg-[#FAF9F6]">
@@ -96,48 +92,12 @@ export default async function ProductDetailPage({
 
       <section className="section-inner py-8 sm:py-12">
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-          {/* Image Gallery */}
-          <div className="space-y-3">
-            <div className="overflow-hidden rounded-3xl bg-white border border-[#E8E6E1]">
-              <div className="relative aspect-square">
-                <Image
-                  src={mainImage}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
-                {isSoldOut && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/70">
-                    <span className="badge-sold-out text-sm px-4 py-1.5">
-                      품절
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-            {images.length > 1 && (
-              <div className="grid grid-cols-4 gap-2.5">
-                {images.map((img, i) => (
-                  <div
-                    key={`${img.image_url}-${i}`}
-                    className="overflow-hidden rounded-xl border border-[#E8E6E1] bg-white"
-                  >
-                    <div className="relative aspect-square">
-                      <Image
-                        src={img.image_url}
-                        alt={`${product.name} ${i + 1}`}
-                        fill
-                        className="object-cover"
-                        sizes="25vw"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Image Gallery — 클릭하면 메인 이미지 전환 */}
+          <ProductImageGallery
+            images={images}
+            productName={product.name}
+            isSoldOut={isSoldOut}
+          />
 
           {/* Product Info */}
           <div className="space-y-5">

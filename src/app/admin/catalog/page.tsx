@@ -8,7 +8,7 @@ export default async function AdminCatalogPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold">카탈로그 관리 (통합)</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-[#6b7280]">
           카테고리는 <strong>폴더</strong>, 상품은 <strong>파일</strong>처럼 보입니다.
           각 카테고리를 펼치면 하위 카테고리와 그 안의 상품이 함께 보이고,
           이름·가격·카테고리 변경은 바로 이 페이지에서 할 수 있어요.

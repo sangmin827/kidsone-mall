@@ -8,7 +8,7 @@ export default async function AdminNewArrivalsPage() {
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold">신상품 관리</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-[#6b7280]">
           체크한 상품만 쇼핑몰에서 <strong>신상품 배지</strong>로 노출됩니다.
           체크 해제된 상품은 배지가 사라집니다.
         </p>

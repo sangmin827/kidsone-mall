@@ -385,8 +385,67 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ━━━ 5. Features ━━━ */}
-      <section className="order-5 py-8 md:py-16"></section>
+      {/* ━━━ 5. Features — 신뢰 요소 ━━━ */}
+      <section className="order-5 py-8 md:py-16 bg-white border-t border-[#E8E6E1]">
+        <div className="section-inner">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-xl font-bold text-[#222222] font-gmarket md:text-3xl">
+              Kids One Mall이 특별한 이유
+            </h2>
+            <p className="mt-2 text-xs text-[#6b7280] md:text-sm">
+              아이의 안전과 성장을 먼저 생각합니다
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+            {[
+              {
+                icon: "🛡️",
+                title: "안전 인증 완료",
+                desc: "KC 인증 등 국내외 안전 기준을 통과한 제품만 판매합니다.",
+                color: "bg-[#ede9fb]",
+                textColor: "text-[#5332C9]",
+              },
+              {
+                icon: "👨‍👩‍👧",
+                title: "전문가 추천",
+                desc: "유아체육 전문가가 직접 검증하고 추천한 도구들로 구성됩니다.",
+                color: "bg-[#fff0f0]",
+                textColor: "text-[#FF5555]",
+              },
+              {
+                icon: "📦",
+                title: "꼼꼼한 포장",
+                desc: "파손 없이 안전하게 도착할 수 있도록 이중 포장으로 발송합니다.",
+                color: "bg-[#fef9ec]",
+                textColor: "text-[#D4AF37]",
+              },
+              {
+                icon: "💬",
+                title: "카카오톡 상담",
+                desc: "궁금한 점은 카카오톡으로 빠르게 답변 받으실 수 있습니다.",
+                color: "bg-[#FEE500]/30",
+                textColor: "text-[#7a6600]",
+              },
+            ].map((feature) => (
+              <div
+                key={feature.title}
+                className="flex flex-col items-center gap-3 rounded-2xl border border-[#E8E6E1] bg-[#FAF9F6] p-5 text-center md:p-6"
+              >
+                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${feature.color}`}>
+                  <span className="text-2xl md:text-3xl">{feature.icon}</span>
+                </div>
+                <div>
+                  <p className={`text-sm font-bold md:text-base ${feature.textColor}`}>{feature.title}</p>
+                  <p className="mt-1.5 text-[11px] leading-5 text-[#6b7280] md:text-xs md:leading-6">
+                    {feature.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

@@ -42,15 +42,13 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   if (searchTerm) query = query.ilike("name", `%${searchTerm}%`);
 
+  // 세트상품은 /sets 전용 페이지에 노출 → 전체상품 목록에서 항상 제외
+  query = query.eq("is_set", false);
+
   if (category) {
     // 특정 카테고리 필터
     const { data: categoryRow } = await supabase.from("categories").select("id").eq("slug", category).maybeSingle();
     if (categoryRow?.id) query = query.eq("category_id", categoryRow.id);
-  } else if (!isTop10) {
-    // 카테고리 미지정 + Top10 아닌 경우 → 세트상품 제외
-    // 세트상품은 /categories/sets 에서 별도 공간으로 노출
-    const { data: setsRow } = await supabase.from("categories").select("id").eq("slug", "sets").maybeSingle();
-    if (setsRow?.id) query = query.neq("category_id", setsRow.id);
   }
 
   // ── 뷰 / 정렬 적용 ──────────────────────────────────────────────────

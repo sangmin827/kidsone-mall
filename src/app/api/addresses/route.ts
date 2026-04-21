@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { createMyAddress } from "@/src/server/addresses";
+import type { SaveAddressRequest } from "@/src/types/address";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    // SaveAddressRequest 타입으로 명시 → 필드명이 클라이언트와 서버 사이에서 항상 일치함을 보장
+    const body: SaveAddressRequest = await request.json();
 
     const formData = new FormData();
     formData.append("recipient_name", body.recipient_name ?? "");

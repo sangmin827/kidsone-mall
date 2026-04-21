@@ -107,7 +107,7 @@ export default async function AdminMembersPage({
 
         <button
           type="submit"
-          className="rounded-xl bg-black px-4 py-2 text-white md:col-span-6 md:w-fit"
+          className="rounded-xl bg-[#5332C9] px-4 py-2 text-white md:col-span-6 md:w-fit"
         >
           검색
         </button>
@@ -115,7 +115,7 @@ export default async function AdminMembersPage({
 
       <div className="overflow-x-auto rounded-2xl border">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-left">
+          <thead className="bg-[#FAF9F6] text-left">
             <tr>
               <th className="px-4 py-3">이름</th>
               <th className="px-4 py-3">이메일</th>
@@ -135,7 +135,7 @@ export default async function AdminMembersPage({
               <tr>
                 <td
                   colSpan={11}
-                  className="px-4 py-10 text-center text-gray-500"
+                  className="px-4 py-10 text-center text-[#6b7280]"
                 >
                   조회된 회원이 없습니다.
                 </td>

@@ -752,6 +752,7 @@ export type AdminOrder = {
   address: string;
   detail_address: string | null;
   request_message: string | null;
+  admin_memo: string | null;
   is_guest: boolean;
   created_at: string;
   order_items: AdminOrderItem[];
@@ -786,42 +787,83 @@ async function requireAdmin() {
   return { supabase, user };
 }
 
-export async function getAdminOrders(): Promise<AdminOrder[]> {
+const ADMIN_ORDER_SELECT = `
+  id,
+  user_id,
+  order_number,
+  status,
+  payment_method,
+  total_amount,
+  depositor_name,
+  orderer_name,
+  orderer_phone,
+  orderer_email,
+  recipient_name,
+  recipient_phone,
+  recipient_phone_extra,
+  zip_code,
+  address,
+  detail_address,
+  request_message,
+  admin_memo,
+  is_guest,
+  created_at,
+  order_items (
+    id,
+    product_id,
+    product_name_snapshot,
+    price_snapshot,
+    quantity
+  )
+`;
+
+export type AdminOrdersFilter = {
+  search?: string;
+  status?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  sort?: "newest" | "oldest" | "amount_desc" | "amount_asc";
+};
+
+export async function getAdminOrders(
+  params?: AdminOrdersFilter,
+): Promise<AdminOrder[]> {
   const { supabase } = await requireAdmin();
 
-  const { data, error } = await supabase
-    .from("orders")
-    .select(
-      `
-      id,
-      user_id,
-      order_number,
-      status,
-      payment_method,
-      total_amount,
-      depositor_name,
-      orderer_name,
-      orderer_phone,
-      orderer_email,
-      recipient_name,
-      recipient_phone,
-      recipient_phone_extra,
-      zip_code,
-      address,
-      detail_address,
-      request_message,
-      is_guest,
-      created_at,
-      order_items (
-        id,
-        product_id,
-        product_name_snapshot,
-        price_snapshot,
-        quantity
-      )
-    `,
-    )
-    .order("created_at", { ascending: false });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query: any = supabase.from("orders").select(ADMIN_ORDER_SELECT);
+
+  if (params?.search) {
+    const s = params.search.trim();
+    query = query.or(
+      `order_number.ilike.%${s}%,orderer_name.ilike.%${s}%,recipient_name.ilike.%${s}%`,
+    );
+  }
+
+  if (params?.status && params.status !== "all") {
+    query = query.eq("status", params.status);
+  }
+
+  if (params?.dateFrom) {
+    query = query.gte("created_at", `${params.dateFrom}T00:00:00`);
+  }
+
+  if (params?.dateTo) {
+    query = query.lte("created_at", `${params.dateTo}T23:59:59`);
+  }
+
+  const sort = params?.sort ?? "newest";
+  if (sort === "oldest") {
+    query = query.order("created_at", { ascending: true });
+  } else if (sort === "amount_desc") {
+    query = query.order("total_amount", { ascending: false });
+  } else if (sort === "amount_asc") {
+    query = query.order("total_amount", { ascending: true });
+  } else {
+    query = query.order("created_at", { ascending: false });
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(`관리자 주문 조회 실패: ${error.message}`);
@@ -874,36 +916,7 @@ export async function getAdminOrderById(
 
   const { data, error } = await supabase
     .from("orders")
-    .select(
-      `
-      id,
-      user_id,
-      order_number,
-      status,
-      payment_method,
-      total_amount,
-      depositor_name,
-      orderer_name,
-      orderer_phone,
-      orderer_email,
-      recipient_name,
-      recipient_phone,
-      recipient_phone_extra,
-      zip_code,
-      address,
-      detail_address,
-      request_message,
-      is_guest,
-      created_at,
-      order_items (
-        id,
-        product_id,
-        product_name_snapshot,
-        price_snapshot,
-        quantity
-      )
-    `,
-    )
+    .select(ADMIN_ORDER_SELECT)
     .eq("id", orderId)
     .single();
 
@@ -912,4 +925,30 @@ export async function getAdminOrderById(
   }
 
   return (data ?? null) as AdminOrder | null;
+}
+
+export async function updateOrderMemo(formData: FormData) {
+  "use server";
+
+  const { supabase } = await requireAdmin();
+
+  const orderId = Number(formData.get("orderId"));
+  const admin_memo =
+    String(formData.get("admin_memo") ?? "").trim() || null;
+
+  if (!orderId) {
+    throw new Error("잘못된 요청입니다.");
+  }
+
+  const { error } = await supabase
+    .from("orders")
+    .update({ admin_memo, updated_at: new Date().toISOString() })
+    .eq("id", orderId);
+
+  if (error) {
+    throw new Error(`메모 저장 실패: ${error.message}`);
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId}`);
 }

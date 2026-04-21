@@ -20,6 +20,7 @@ export type AdminProduct = {
   category_id: number | null;
   is_active: boolean;
   is_new: boolean;
+  is_set: boolean;
   top10_rank: number | null;
   is_sold_out: boolean;
   hide_when_sold_out: boolean;
@@ -28,7 +29,7 @@ export type AdminProduct = {
 };
 
 const PRODUCT_COLUMNS =
-  'id, name, slug, price, stock, short_description, description, category_id, is_active, is_new, top10_rank, is_sold_out, hide_when_sold_out, created_at';
+  'id, name, slug, price, stock, short_description, description, category_id, is_active, is_new, is_set, top10_rank, is_sold_out, hide_when_sold_out, created_at';
 
 const PRODUCT_IMAGE_COLUMNS =
   'id, product_id, image_url, is_thumbnail, sort_order, storage_path';
