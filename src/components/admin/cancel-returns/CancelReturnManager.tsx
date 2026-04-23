@@ -19,7 +19,12 @@ import {
 } from "@/src/server/admin-cancel-return";
 
 // ── 타입 ────────────────────────────────────────────────────────────────
-type Tab = "all" | "cancel_req" | "cancel_withdraw" | "return_req" | "return_withdraw";
+type Tab =
+  | "all"
+  | "cancel_req"
+  | "cancel_withdraw"
+  | "return_req"
+  | "return_withdraw";
 type ActionMode = "approve" | "reject";
 
 type ModalItem =
@@ -36,29 +41,74 @@ const TAB_CONFIG: { value: Tab; label: string; dot?: string }[] = [
 ];
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  requested:          { label: "취소 접수",   cls: "bg-orange-50 text-orange-700 border-orange-200" },
-  completed:          { label: "취소 완료",   cls: "bg-[#f9fafb] text-[#6b7280] border-gray-200"   },
-  rejected:           { label: "취소 거절",   cls: "bg-red-50 text-[#FF5555] border-red-200"       },
-  withdraw_requested: { label: "철회 요청 중", cls: "bg-[#fefce8] text-[#92400e] border-[#fef08a]" },
-  withdraw_completed: { label: "철회 완료",   cls: "bg-green-50 text-green-700 border-green-200"   },
-  picked_up:          { label: "수거 중",     cls: "bg-blue-50 text-blue-700 border-blue-200"      },
+  requested: {
+    label: "취소 접수",
+    cls: "bg-orange-50 text-orange-700 border-orange-200",
+  },
+  completed: {
+    label: "취소 완료",
+    cls: "bg-[#f9fafb] text-[#6b7280] border-gray-200",
+  },
+  rejected: {
+    label: "취소 거절",
+    cls: "bg-red-50 text-[#FF5555] border-red-200",
+  },
+  withdraw_requested: {
+    label: "철회 요청 중",
+    cls: "bg-[#fefce8] text-[#92400e] border-[#fef08a]",
+  },
+  withdraw_completed: {
+    label: "철회 완료",
+    cls: "bg-green-50 text-green-700 border-green-200",
+  },
+  picked_up: {
+    label: "수거 중",
+    cls: "bg-blue-50 text-blue-700 border-blue-200",
+  },
 };
 
 const RETURN_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  requested:          { label: "반품 접수",   cls: "bg-orange-50 text-orange-700 border-orange-200" },
-  picked_up:          { label: "수거 중",     cls: "bg-blue-50 text-blue-700 border-blue-200"       },
-  completed:          { label: "반품 완료",   cls: "bg-green-50 text-green-700 border-green-200"    },
-  rejected:           { label: "반품 거절",   cls: "bg-red-50 text-[#FF5555] border-red-200"        },
-  withdraw_requested: { label: "철회 요청 중", cls: "bg-[#fefce8] text-[#92400e] border-[#fef08a]" },
-  withdraw_completed: { label: "철회 완료",   cls: "bg-green-50 text-green-700 border-green-200"   },
+  requested: {
+    label: "반품 접수",
+    cls: "bg-orange-50 text-orange-700 border-orange-200",
+  },
+  picked_up: {
+    label: "수거 중",
+    cls: "bg-blue-50 text-blue-700 border-blue-200",
+  },
+  completed: {
+    label: "반품 완료",
+    cls: "bg-green-50 text-green-700 border-green-200",
+  },
+  rejected: {
+    label: "반품 거절",
+    cls: "bg-red-50 text-[#FF5555] border-red-200",
+  },
+  withdraw_requested: {
+    label: "철회 요청 중",
+    cls: "bg-[#fefce8] text-[#92400e] border-[#fef08a]",
+  },
+  withdraw_completed: {
+    label: "철회 완료",
+    cls: "bg-green-50 text-green-700 border-green-200",
+  },
 };
 
 // ── 유틸 ────────────────────────────────────────────────────────────────
 function fmtDate(s: string) {
-  return new Date(s).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" });
+  return new Date(s).toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
 }
 function fmtDateTime(s: string) {
-  return new Date(s).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  return new Date(s).toLocaleString("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function isActionable(status: string) {
@@ -66,11 +116,22 @@ function isActionable(status: string) {
 }
 
 // ── 상태 뱃지 컴포넌트 ─────────────────────────────────────────────────
-function StatusBadge({ status, isReturn = false }: { status: string; isReturn?: boolean }) {
+function StatusBadge({
+  status,
+  isReturn = false,
+}: {
+  status: string;
+  isReturn?: boolean;
+}) {
   const map = isReturn ? RETURN_STATUS_BADGE : STATUS_BADGE;
-  const cfg = map[status] ?? { label: status, cls: "bg-gray-100 text-gray-600 border-gray-200" };
+  const cfg = map[status] ?? {
+    label: status,
+    cls: "bg-gray-100 text-gray-600 border-gray-200",
+  };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${cfg.cls}`}>
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${cfg.cls}`}
+    >
       {cfg.label}
     </span>
   );
@@ -84,7 +145,11 @@ type Props = {
 };
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────────────────
-export default function CancelReturnManager({ cancelRequests, returnRequests, initialTab = "all" }: Props) {
+export default function CancelReturnManager({
+  cancelRequests,
+  returnRequests,
+  initialTab = "all",
+}: Props) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [selected, setSelected] = useState<ModalItem | null>(null);
   const [actionMode, setActionMode] = useState<ActionMode | null>(null);
@@ -109,15 +174,19 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
   // 모달 열릴 때 body 스크롤 막기
   useEffect(() => {
     document.body.style.overflow = selected ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [selected]);
 
   // ESC 키 닫기
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === "Escape") closeModal(); };
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeModal();
+    };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── 탭별 필터링 ────────────────────────────────────────────────────────
@@ -138,10 +207,14 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
   // 탭 카운트
   const counts: Record<Tab, number> = {
     all: cancelRequests.length + returnRequests.length,
-    cancel_req: cancelRequests.filter(r => r.status === "requested").length,
-    cancel_withdraw: cancelRequests.filter(r => r.status === "withdraw_requested").length,
-    return_req: returnRequests.filter(r => r.status === "requested").length,
-    return_withdraw: returnRequests.filter(r => r.status === "withdraw_requested").length,
+    cancel_req: cancelRequests.filter((r) => r.status === "requested").length,
+    cancel_withdraw: cancelRequests.filter(
+      (r) => r.status === "withdraw_requested",
+    ).length,
+    return_req: returnRequests.filter((r) => r.status === "requested").length,
+    return_withdraw: returnRequests.filter(
+      (r) => r.status === "withdraw_requested",
+    ).length,
   };
 
   // ── 승인/거절 제출 ────────────────────────────────────────────────────
@@ -163,24 +236,34 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
         if (selected.kind === "cancel") {
           const { status } = selected.data;
           if (status === "requested") {
-            if (actionMode === "approve") await approveCancelRequest(selected.data.id, memo);
+            if (actionMode === "approve")
+              await approveCancelRequest(selected.data.id, memo);
             else await rejectCancelRequest(selected.data.id, adminMemo, notice);
           } else if (status === "withdraw_requested") {
-            if (actionMode === "approve") await approveCancelWithdraw(selected.data.id, memo);
-            else await rejectCancelWithdraw(selected.data.id, adminMemo, notice);
+            if (actionMode === "approve")
+              await approveCancelWithdraw(selected.data.id, memo);
+            else
+              await rejectCancelWithdraw(selected.data.id, adminMemo, notice);
           }
         } else {
           const { status } = selected.data;
           if (status === "requested") {
-            if (actionMode === "approve") await approveReturnRequest(selected.data.id, memo);
+            if (actionMode === "approve")
+              await approveReturnRequest(selected.data.id, memo);
             else await rejectReturnRequest(selected.data.id, adminMemo, notice);
           } else if (status === "withdraw_requested") {
-            if (actionMode === "approve") await approveReturnWithdraw(selected.data.id, memo);
-            else await rejectReturnWithdraw(selected.data.id, adminMemo, notice);
+            if (actionMode === "approve")
+              await approveReturnWithdraw(selected.data.id, memo);
+            else
+              await rejectReturnWithdraw(selected.data.id, adminMemo, notice);
           }
         }
 
-        setSuccess(actionMode === "approve" ? "승인 처리되었습니다." : "거절 처리되었습니다.");
+        setSuccess(
+          actionMode === "approve"
+            ? "승인 처리되었습니다."
+            : "거절 처리되었습니다.",
+        );
         setTimeout(() => closeModal(), 1500);
       } catch (err) {
         setError(err instanceof Error ? err.message : "처리에 실패했습니다.");
@@ -193,7 +276,8 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
     if (!selected) return;
     startTransition(async () => {
       try {
-        if (selected.kind === "cancel") await deleteCancelMemo(selected.data.id);
+        if (selected.kind === "cancel")
+          await deleteCancelMemo(selected.data.id);
         else await deleteReturnMemo(selected.data.id);
         setDeleteConfirm(false);
         setSuccess("메모가 삭제되었습니다.");
@@ -227,7 +311,10 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
   return (
     <>
       {/* ── 탭 ─────────────────────────────────────────────────────────── */}
-      <div className="flex gap-1 overflow-x-auto pb-0.5" style={{ scrollbarWidth: "none" }}>
+      <div
+        className="flex gap-1 overflow-x-auto pb-0.5"
+        style={{ scrollbarWidth: "none" }}
+      >
         {TAB_CONFIG.map((t) => (
           <button
             key={t.value}
@@ -241,9 +328,13 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
           >
             {t.label}
             {counts[t.value] > 0 && (
-              <span className={`ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold ${
-                tab === t.value ? "bg-white/25 text-white" : "bg-[#FF5555] text-white"
-              }`}>
+              <span
+                className={`ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold ${
+                  tab === t.value
+                    ? "bg-white/25 text-white"
+                    : "bg-[#FF5555] text-white"
+                }`}
+              >
                 {counts[t.value]}
               </span>
             )}
@@ -255,8 +346,12 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
       {filteredCancel.length === 0 && filteredReturn.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-[#E8E6E1] bg-white py-16 text-center">
           <span className="text-3xl">📋</span>
-          <p className="text-sm font-semibold text-[#222222]">처리할 요청이 없습니다</p>
-          <p className="text-xs text-[#9ca3af]">새로운 요청이 들어오면 여기에 표시됩니다.</p>
+          <p className="text-sm font-semibold text-[#222222]">
+            처리할 요청이 없습니다
+          </p>
+          <p className="text-xs text-[#9ca3af]">
+            새로운 요청이 들어오면 여기에 표시됩니다.
+          </p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-[#E8E6E1] bg-white">
@@ -275,7 +370,10 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
               <button
                 key={`c-${req.id}`}
                 type="button"
-                onClick={() => { setSelected({ kind: "cancel", data: req }); setActionMode(null); }}
+                onClick={() => {
+                  setSelected({ kind: "cancel", data: req });
+                  setActionMode(null);
+                }}
                 className="w-full px-5 py-3.5 text-left transition-colors hover:bg-[#FAF9F6]"
               >
                 {/* 모바일 */}
@@ -283,40 +381,74 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="rounded-full bg-orange-50 border border-orange-200 px-2 py-0.5 text-[10px] font-bold text-orange-700">
-                        {req.status === "withdraw_requested" ? "취소철회" : "취소요청"}
+                        {req.status === "withdraw_requested"
+                          ? "취소철회"
+                          : "취소요청"}
                       </span>
                       <StatusBadge status={req.status} />
                     </div>
-                    <p className="truncate text-xs font-semibold text-[#222222]">{req.orders?.order_number}</p>
-                    <p className="text-xs text-[#6b7280]">{req.orders?.orderer_name ?? req.orders?.recipient_name}</p>
-                    {req.reason && <p className="truncate text-[11px] text-[#9ca3af]">{req.reason}</p>}
+                    <p className="truncate text-xs font-semibold text-[#222222]">
+                      {req.orders?.[0]?.order_number}
+                    </p>
+
+                    <p className="text-xs text-[#6b7280]">
+                      {req.orders?.[0]?.orderer_name ??
+                        req.orders?.[0]?.recipient_name}
+                    </p>
+                    {req.reason && (
+                      <p className="truncate text-[11px] text-[#9ca3af]">
+                        {req.reason}
+                      </p>
+                    )}
                   </div>
                   <div className="flex-none text-right">
-                    <p className="text-xs font-bold text-[#222222]">{req.orders?.total_amount.toLocaleString()}원</p>
-                    <p className="text-[11px] text-[#9ca3af]">{fmtDate(req.created_at)}</p>
+                    <p className="text-xs font-bold text-[#222222]">
+                      {req.orders?.[0]?.total_amount?.toLocaleString()}원
+                    </p>
+                    <p className="text-[11px] text-[#9ca3af]">
+                      {fmtDate(req.created_at)}
+                    </p>
                   </div>
                 </div>
 
                 {/* PC */}
                 <div className="hidden sm:grid sm:grid-cols-[80px_1fr_100px_120px_90px] sm:items-center sm:gap-4">
                   <div>
-                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${req.status === "withdraw_requested" ? "bg-[#fefce8] text-[#92400e] border-[#fef08a]" : "bg-orange-50 text-orange-700 border-orange-200"}`}>
-                      {req.status === "withdraw_requested" ? "취소철회" : "취소요청"}
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${req.status === "withdraw_requested" ? "bg-[#fefce8] text-[#92400e] border-[#fef08a]" : "bg-orange-50 text-orange-700 border-orange-200"}`}
+                    >
+                      {req.status === "withdraw_requested"
+                        ? "취소철회"
+                        : "취소요청"}
                     </span>
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[#222222]">{req.orders?.order_number}</p>
-                    <p className="text-xs text-[#6b7280]">{req.orders?.orderer_name ?? req.orders?.recipient_name} · {req.orders?.total_amount.toLocaleString()}원</p>
+                    <p className="truncate text-sm font-semibold text-[#222222]">
+                      {req.orders?.[0]?.order_number}
+                    </p>
+
+                    <p className="text-xs text-[#6b7280]">
+                      {req.orders?.[0]?.orderer_name ??
+                        req.orders?.[0]?.recipient_name}{" "}
+                      ·{req.orders?.[0]?.total_amount?.toLocaleString()}원
+                    </p>
                   </div>
                   <div>
                     {req.reason ? (
-                      <p className="truncate text-xs text-[#6b7280]">{req.reason.slice(0, 20)}{req.reason.length > 20 ? "…" : ""}</p>
+                      <p className="truncate text-xs text-[#6b7280]">
+                        {req.reason.slice(0, 20)}
+                        {req.reason.length > 20 ? "…" : ""}
+                      </p>
                     ) : (
                       <span className="text-xs text-[#d1d5db]">-</span>
                     )}
                   </div>
-                  <div className="text-xs text-[#9ca3af]">{fmtDateTime(req.created_at)}</div>
-                  <div><StatusBadge status={req.status} /></div>
+                  <div className="text-xs text-[#9ca3af]">
+                    {fmtDateTime(req.created_at)}
+                  </div>
+                  <div>
+                    <StatusBadge status={req.status} />
+                  </div>
                 </div>
               </button>
             ))}
@@ -326,48 +458,85 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
               <button
                 key={`r-${req.id}`}
                 type="button"
-                onClick={() => { setSelected({ kind: "return", data: req }); setActionMode(null); }}
+                onClick={() => {
+                  setSelected({ kind: "return", data: req });
+                  setActionMode(null);
+                }}
                 className="w-full px-5 py-3.5 text-left transition-colors hover:bg-[#FAF9F6]"
               >
                 {/* 모바일 */}
                 <div className="flex items-start justify-between gap-2 sm:hidden">
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${req.status === "withdraw_requested" ? "bg-[#fefce8] text-[#92400e] border-[#fef08a]" : "bg-blue-50 text-blue-700 border-blue-200"}`}>
-                        {req.status === "withdraw_requested" ? "반품철회" : "반품요청"}
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${req.status === "withdraw_requested" ? "bg-[#fefce8] text-[#92400e] border-[#fef08a]" : "bg-blue-50 text-blue-700 border-blue-200"}`}
+                      >
+                        {req.status === "withdraw_requested"
+                          ? "반품철회"
+                          : "반품요청"}
                       </span>
                       <StatusBadge status={req.status} isReturn />
                     </div>
-                    <p className="truncate text-xs font-semibold text-[#222222]">{req.orders?.order_number}</p>
-                    <p className="text-xs text-[#6b7280]">{req.orders?.orderer_name ?? req.orders?.recipient_name}</p>
-                    {req.reason && <p className="truncate text-[11px] text-[#9ca3af]">{req.reason}</p>}
+                    <p className="truncate text-xs font-semibold text-[#222222]">
+                      {req.orders?.[0]?.order_number}
+                    </p>
+                    <p className="text-xs text-[#6b7280]">
+                      {req.orders?.[0]?.orderer_name ??
+                        req.orders?.[0]?.recipient_name}
+                    </p>
+                    {req.reason && (
+                      <p className="truncate text-[11px] text-[#9ca3af]">
+                        {req.reason}
+                      </p>
+                    )}
                   </div>
                   <div className="flex-none text-right">
-                    <p className="text-xs font-bold text-[#222222]">{req.orders?.total_amount.toLocaleString()}원</p>
-                    <p className="text-[11px] text-[#9ca3af]">{fmtDate(req.created_at)}</p>
+                    <p className="text-xs font-bold text-[#222222]">
+                      {req.orders?.[0]?.total_amount?.toLocaleString()}원
+                    </p>
+                    <p className="text-[11px] text-[#9ca3af]">
+                      {fmtDate(req.created_at)}
+                    </p>
                   </div>
                 </div>
 
                 {/* PC */}
                 <div className="hidden sm:grid sm:grid-cols-[80px_1fr_100px_120px_90px] sm:items-center sm:gap-4">
                   <div>
-                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${req.status === "withdraw_requested" ? "bg-[#fefce8] text-[#92400e] border-[#fef08a]" : "bg-blue-50 text-blue-700 border-blue-200"}`}>
-                      {req.status === "withdraw_requested" ? "반품철회" : "반품요청"}
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${req.status === "withdraw_requested" ? "bg-[#fefce8] text-[#92400e] border-[#fef08a]" : "bg-blue-50 text-blue-700 border-blue-200"}`}
+                    >
+                      {req.status === "withdraw_requested"
+                        ? "반품철회"
+                        : "반품요청"}
                     </span>
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[#222222]">{req.orders?.order_number}</p>
-                    <p className="text-xs text-[#6b7280]">{req.orders?.orderer_name ?? req.orders?.recipient_name} · {req.orders?.total_amount.toLocaleString()}원</p>
+                    <p className="truncate text-sm font-semibold text-[#222222]">
+                      {req.orders?.[0]?.order_number}
+                    </p>
+                    <p className="text-xs text-[#6b7280]">
+                      {req.orders?.[0]?.orderer_name ??
+                        req.orders?.[0]?.recipient_name}{" "}
+                      · {req.orders?.[0]?.total_amount?.toLocaleString()}원
+                    </p>
                   </div>
                   <div>
                     {req.reason ? (
-                      <p className="truncate text-xs text-[#6b7280]">{req.reason.slice(0, 20)}{req.reason.length > 20 ? "…" : ""}</p>
+                      <p className="truncate text-xs text-[#6b7280]">
+                        {req.reason.slice(0, 20)}
+                        {req.reason.length > 20 ? "…" : ""}
+                      </p>
                     ) : (
                       <span className="text-xs text-[#d1d5db]">-</span>
                     )}
                   </div>
-                  <div className="text-xs text-[#9ca3af]">{fmtDateTime(req.created_at)}</div>
-                  <div><StatusBadge status={req.status} isReturn /></div>
+                  <div className="text-xs text-[#9ca3af]">
+                    {fmtDateTime(req.created_at)}
+                  </div>
+                  <div>
+                    <StatusBadge status={req.status} isReturn />
+                  </div>
                 </div>
               </button>
             ))}
@@ -391,31 +560,54 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="mb-1 flex items-center gap-2 flex-wrap">
-                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
-                      selected.kind === "cancel"
-                        ? selected.data.status === "withdraw_requested"
-                          ? "bg-[#fefce8] text-[#92400e] border-[#fef08a]"
-                          : "bg-orange-50 text-orange-700 border-orange-200"
-                        : selected.data.status === "withdraw_requested"
-                          ? "bg-[#fefce8] text-[#92400e] border-[#fef08a]"
-                          : "bg-blue-50 text-blue-700 border-blue-200"
-                    }`}>
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+                        selected.kind === "cancel"
+                          ? selected.data.status === "withdraw_requested"
+                            ? "bg-[#fefce8] text-[#92400e] border-[#fef08a]"
+                            : "bg-orange-50 text-orange-700 border-orange-200"
+                          : selected.data.status === "withdraw_requested"
+                            ? "bg-[#fefce8] text-[#92400e] border-[#fef08a]"
+                            : "bg-blue-50 text-blue-700 border-blue-200"
+                      }`}
+                    >
                       {selected.kind === "cancel"
-                        ? selected.data.status === "withdraw_requested" ? "취소 철회요청" : "취소 요청"
-                        : selected.data.status === "withdraw_requested" ? "반품 철회요청" : "반품 요청"}
+                        ? selected.data.status === "withdraw_requested"
+                          ? "취소 철회요청"
+                          : "취소 요청"
+                        : selected.data.status === "withdraw_requested"
+                          ? "반품 철회요청"
+                          : "반품 요청"}
                     </span>
-                    <StatusBadge status={selected.data.status} isReturn={selected.kind === "return"} />
+                    <StatusBadge
+                      status={selected.data.status}
+                      isReturn={selected.kind === "return"}
+                    />
                   </div>
-                  <p className="text-sm font-bold text-[#222222]">{selected.data.orders?.order_number}</p>
-                  <p className="text-xs text-[#9ca3af]">{fmtDateTime(selected.data.created_at)}</p>
+                  <p className="text-sm font-bold text-[#222222]">
+                    {selected.data.orders?.[0]?.order_number}
+                  </p>
+                  <p className="text-xs text-[#9ca3af]">
+                    {fmtDateTime(selected.data.created_at)}
+                  </p>
                 </div>
                 <button
                   type="button"
                   onClick={closeModal}
                   className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-[#6b7280] hover:bg-[#FAF9F6]"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </button>
               </div>
@@ -426,26 +618,59 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
             {/* 스크롤 본문 */}
             <div className="flex-1 overflow-y-auto">
               <div className="space-y-4 px-5 py-5">
-
                 {/* 주문 정보 */}
                 <section className="rounded-2xl border border-[#E8E6E1] bg-[#FAF9F6] p-4 space-y-1.5">
-                  <p className="text-xs font-bold text-[#9ca3af] uppercase tracking-wide mb-2">주문 정보</p>
-                  <Row label="주문자" value={selected.data.orders?.orderer_name ?? selected.data.orders?.recipient_name ?? "-"} />
-                  <Row label="수령인" value={selected.data.orders?.recipient_name ?? "-"} />
-                  <Row label="결제금액" value={`${selected.data.orders?.total_amount?.toLocaleString()}원`} />
-                  <Row label="주문상태" value={selected.data.orders?.status ?? "-"} />
+                  <p className="text-xs font-bold text-[#9ca3af] uppercase tracking-wide mb-2">
+                    주문 정보
+                  </p>
+                  <Row
+                    label="주문자"
+                    value={
+                      selected.data.orders?.[0]?.orderer_name ??
+                      selected.data.orders?.[0]?.recipient_name ??
+                      "-"
+                    }
+                  />
+                  <Row
+                    label="수령인"
+                    value={selected.data.orders?.[0]?.recipient_name ?? "-"}
+                  />
+                  <Row
+                    label="결제금액"
+                    value={`${selected.data.orders?.[0]?.total_amount?.toLocaleString()}원`}
+                  />
+                  <Row
+                    label="주문상태"
+                    value={selected.data.orders?.[0]?.status ?? "-"}
+                  />
                 </section>
 
                 {/* 요청 상세 */}
                 <section className="rounded-2xl border border-[#E8E6E1] bg-[#FAF9F6] p-4 space-y-1.5">
-                  <p className="text-xs font-bold text-[#9ca3af] uppercase tracking-wide mb-2">요청 상세</p>
-                  <Row label="요청 유형" value={selected.data.type === "full" ? "전체" : "부분"} />
-                  {selected.data.reason && <Row label="사유" value={selected.data.reason} />}
+                  <p className="text-xs font-bold text-[#9ca3af] uppercase tracking-wide mb-2">
+                    요청 상세
+                  </p>
+                  <Row
+                    label="요청 유형"
+                    value={selected.data.type === "full" ? "전체" : "부분"}
+                  />
+                  {selected.data.reason && (
+                    <Row label="사유" value={selected.data.reason} />
+                  )}
                   {selected.kind === "cancel" && selected.data.refund_bank && (
                     <>
-                      <Row label="환불 은행" value={selected.data.refund_bank} />
-                      <Row label="계좌번호" value={selected.data.refund_account_number ?? "-"} />
-                      <Row label="예금주" value={selected.data.refund_account_name ?? "-"} />
+                      <Row
+                        label="환불 은행"
+                        value={selected.data.refund_bank}
+                      />
+                      <Row
+                        label="계좌번호"
+                        value={selected.data.refund_account_number ?? "-"}
+                      />
+                      <Row
+                        label="예금주"
+                        value={selected.data.refund_account_name ?? "-"}
+                      />
                     </>
                   )}
                 </section>
@@ -454,21 +679,38 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
                 {hasMemo && (
                   <section className="rounded-2xl border border-[#E8E6E1] bg-white p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold text-[#222222]">처리 메모</p>
+                      <p className="text-xs font-bold text-[#222222]">
+                        처리 메모
+                      </p>
                       <button
                         type="button"
                         onClick={() => setDeleteConfirm(true)}
                         className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-[#FF5555] hover:bg-red-50 transition-colors"
                       >
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                        <svg
+                          width="11"
+                          height="11"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                          <path d="M10 11v6" />
+                          <path d="M14 11v6" />
+                          <path d="M9 6V4h6v2" />
                         </svg>
                         삭제
                       </button>
                     </div>
                     {selected.data.admin_memo && (
                       <div>
-                        <p className="mb-1 text-[11px] font-semibold text-[#6b7280]">관리자 메모 (내부용)</p>
+                        <p className="mb-1 text-[11px] font-semibold text-[#6b7280]">
+                          관리자 메모 (내부용)
+                        </p>
                         <div className="rounded-xl border border-[#E8E6E1] bg-[#FAF9F6] px-3 py-2 text-xs text-[#222222]">
                           {selected.data.admin_memo}
                         </div>
@@ -476,7 +718,9 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
                     )}
                     {selected.data.customer_notice && (
                       <div>
-                        <p className="mb-1 text-[11px] font-semibold text-[#6b7280]">고객 안내문구</p>
+                        <p className="mb-1 text-[11px] font-semibold text-[#6b7280]">
+                          고객 안내문구
+                        </p>
                         <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
                           {selected.data.customer_notice}
                         </div>
@@ -491,7 +735,9 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
                     {/* 액션 선택 버튼 */}
                     {!actionMode && !success && (
                       <section>
-                        <p className="mb-2 text-xs font-bold text-[#222222]">처리 선택</p>
+                        <p className="mb-2 text-xs font-bold text-[#222222]">
+                          처리 선택
+                        </p>
                         <div className="flex gap-2">
                           <button
                             type="button"
@@ -514,13 +760,19 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
                     {/* 메모 폼 */}
                     {actionMode && !success && (
                       <section className="space-y-3">
-                        <div className={`rounded-xl border px-4 py-3 ${
-                          actionMode === "approve"
-                            ? "border-[#5332C9]/20 bg-[#ede9fb]"
-                            : "border-[#FF5555]/20 bg-red-50"
-                        }`}>
-                          <p className={`text-xs font-bold ${actionMode === "approve" ? "text-[#5332C9]" : "text-[#FF5555]"}`}>
-                            {actionMode === "approve" ? `✅ ${labels.approve} 처리` : `❌ ${labels.reject} 처리`}
+                        <div
+                          className={`rounded-xl border px-4 py-3 ${
+                            actionMode === "approve"
+                              ? "border-[#5332C9]/20 bg-[#ede9fb]"
+                              : "border-[#FF5555]/20 bg-red-50"
+                          }`}
+                        >
+                          <p
+                            className={`text-xs font-bold ${actionMode === "approve" ? "text-[#5332C9]" : "text-[#FF5555]"}`}
+                          >
+                            {actionMode === "approve"
+                              ? `✅ ${labels.approve} 처리`
+                              : `❌ ${labels.reject} 처리`}
                           </p>
                           <p className="mt-0.5 text-[11px] text-[#6b7280]">
                             {actionMode === "approve"
@@ -532,7 +784,10 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
                         {/* 관리자 메모 */}
                         <div>
                           <label className="mb-1.5 block text-xs font-semibold text-[#6b7280]">
-                            관리자 메모 <span className="text-[#9ca3af]">(내부용 · 선택)</span>
+                            관리자 메모{" "}
+                            <span className="text-[#9ca3af]">
+                              (내부용 · 선택)
+                            </span>
                           </label>
                           <textarea
                             value={adminMemo}
@@ -547,16 +802,21 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
                         {actionMode === "reject" && (
                           <div>
                             <label className="mb-1.5 block text-xs font-semibold text-[#6b7280]">
-                              고객 안내문구 <span className="text-[#FF5555]">*</span>
-                              <span className="ml-1 text-[#9ca3af]">(고객에게 표시됨)</span>
+                              고객 안내문구{" "}
+                              <span className="text-[#FF5555]">*</span>
+                              <span className="ml-1 text-[#9ca3af]">
+                                (고객에게 표시됨)
+                              </span>
                             </label>
                             <textarea
                               value={customerNotice}
-                              onChange={(e) => setCustomerNotice(e.target.value)}
+                              onChange={(e) =>
+                                setCustomerNotice(e.target.value)
+                              }
                               placeholder="예) 상품 출고가 완료되어 취소가 불가합니다. 상품 수령 후 반품 신청을 이용해 주세요."
                               rows={3}
                               className="w-full resize-none rounded-xl border border-[#E8E6E1] px-3 py-2.5 text-sm focus:border-[#FF5555] focus:outline-none focus:ring-2 focus:ring-[#FF5555]/15"
-                          />
+                            />
                           </div>
                         )}
 
@@ -569,7 +829,10 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
                         <div className="flex gap-2 pb-1">
                           <button
                             type="button"
-                            onClick={() => { setActionMode(null); setError(""); }}
+                            onClick={() => {
+                              setActionMode(null);
+                              setError("");
+                            }}
                             className="flex-1 rounded-xl border border-[#E8E6E1] py-2.5 text-sm font-medium text-[#6b7280] hover:bg-[#FAF9F6] transition-colors"
                           >
                             취소
@@ -598,7 +861,6 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
                     ✅ {success}
                   </div>
                 )}
-
               </div>
             </div>
           </div>
@@ -608,16 +870,34 @@ export default function CancelReturnManager({ cancelRequests, returnRequests, in
       {/* ── 메모 삭제 확인 모달 ──────────────────────────────────────────── */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setDeleteConfirm(false)} />
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setDeleteConfirm(false)}
+          />
           <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF5555" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#FF5555"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
               </svg>
             </div>
-            <h3 className="text-base font-bold text-[#222222]">메모를 삭제하시겠습니까?</h3>
+            <h3 className="text-base font-bold text-[#222222]">
+              메모를 삭제하시겠습니까?
+            </h3>
             <p className="mt-1.5 text-sm text-[#6b7280]">
-              관리자 메모와 고객 안내문구가 모두 삭제됩니다. 삭제된 내용은 복구할 수 없습니다.
+              관리자 메모와 고객 안내문구가 모두 삭제됩니다. 삭제된 내용은
+              복구할 수 없습니다.
             </p>
             <div className="mt-5 flex gap-2">
               <button
