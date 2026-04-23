@@ -15,6 +15,7 @@ import AuthToastBridge from "@/src/components/auth/AuthToastBridge";
 import LogoutButton from "@/src/components/auth/LogoutButton";
 import LoginModal from "@/src/components/auth/LoginModal";
 import LoginTrigger from "@/src/components/auth/LoginTrigger";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "Kids One Mall",
@@ -386,6 +387,7 @@ export default async function RootLayout({
         <Suspense fallback={null}>
           <LoginModal />
         </Suspense>
+        <SpeedInsights />
       </body>
     </html>
   );
