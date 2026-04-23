@@ -2,24 +2,31 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type Props = {
   search?: string;
-  status?: string;
+  status?: string;       // 쉼표 구분 문자열 그대로 전달
   dateFrom?: string;
   dateTo?: string;
   sort?: string;
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  all: "전체",
-  pending: "입금 대기",
-  paid: "결제 완료",
-  preparing: "상품 준비중",
-  shipping: "배송 중",
-  delivered: "배송 완료",
-  cancelled: "주문 취소",
-};
+const STATUS_OPTIONS = [
+  { value: "pending",          label: "입금 대기",   idle: "border-amber-200  text-amber-700  bg-amber-50",   active: "border-amber-400  text-white bg-amber-500"  },
+  { value: "paid",             label: "결제 완료",   idle: "border-green-200  text-green-700  bg-green-50",   active: "border-green-500  text-white bg-green-600"  },
+  { value: "preparing",        label: "상품 준비중", idle: "border-blue-200   text-blue-700   bg-blue-50",    active: "border-blue-500   text-white bg-blue-600"   },
+  { value: "shipping",         label: "배송 중",     idle: "border-[#c4b5fd] text-[#5332C9] bg-[#ede9fb]",  active: "border-[#5332C9] text-white  bg-[#5332C9]"  },
+  { value: "delivered",        label: "배송 완료",   idle: "border-gray-200   text-gray-600   bg-gray-50",    active: "border-gray-500   text-white bg-gray-500"   },
+  { value: "cancelled",        label: "주문 취소",   idle: "border-red-200    text-[#FF5555]  bg-red-50",     active: "border-red-500    text-white bg-red-500"    },
+  { value: "cancel_requested", label: "취소 요청",   idle: "border-orange-200 text-orange-700 bg-orange-50",  active: "border-orange-500 text-white bg-orange-500" },
+  { value: "return_requested", label: "반품 요청",   idle: "border-blue-200   text-blue-700   bg-blue-50",    active: "border-blue-600   text-white bg-blue-600"   },
+  { value: "return_completed", label: "반품 완료",   idle: "border-green-200  text-green-700  bg-green-50",   active: "border-green-600  text-white bg-green-600"  },
+];
+
+const STATUS_LABEL_MAP: Record<string, string> = Object.fromEntries(
+  STATUS_OPTIONS.map((o) => [o.value, o.label]),
+);
 
 const SORT_OPTIONS = [
   { value: "newest",      label: "최신순" },
@@ -35,8 +42,32 @@ export default function AdminOrdersMobileFilter({
   dateTo,
   sort,
 }: Props) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const [visible, setVisible] = useState(false);
+
+  // 현재 선택된 상태 배열
+  const currentStatuses = (status ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s && s !== "all");
+
+  function toggleStatus(value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "all") {
+      params.delete("status");
+    } else {
+      const cur = (params.get("status") ?? "").split(",").filter(Boolean);
+      const idx = cur.indexOf(value);
+      if (idx >= 0) cur.splice(idx, 1);
+      else cur.push(value);
+      if (cur.length === 0) params.delete("status");
+      else params.set("status", cur.join(","));
+    }
+    const qs = params.toString();
+    router.push(`/admin/orders${qs ? `?${qs}` : ""}`);
+  }
 
   /* 애니메이션: isOpen 변경 → 다음 프레임에서 visible 동기화 */
   useEffect(() => {
@@ -58,7 +89,7 @@ export default function AdminOrdersMobileFilter({
 
   const hasFilter = !!(
     search ||
-    (status && status !== "all") ||
+    currentStatuses.length > 0 ||
     dateFrom ||
     dateTo
   );
@@ -66,7 +97,8 @@ export default function AdminOrdersMobileFilter({
   /* 요약 태그 */
   const tags: string[] = [];
   if (search) tags.push(`"${search}"`);
-  if (status && status !== "all") tags.push(STATUS_LABELS[status] ?? status);
+  if (currentStatuses.length > 0)
+    tags.push(currentStatuses.map((s) => STATUS_LABEL_MAP[s] ?? s).join(", "));
   if (dateFrom && dateTo) tags.push(`${dateFrom} ~ ${dateTo}`);
   else if (dateFrom) tags.push(`${dateFrom} ~`);
   else if (dateTo) tags.push(`~ ${dateTo}`);
@@ -169,6 +201,10 @@ export default function AdminOrdersMobileFilter({
 
             {/* 필터 폼 */}
             <form method="get" action="/admin/orders" className="space-y-4">
+              {/* 상태 선택은 버튼 토글로 URL에 이미 반영됨 — 검색 폼 제출 시 보존 */}
+              {currentStatuses.length > 0 && (
+                <input type="hidden" name="status" value={currentStatuses.join(",")} />
+              )}
               {/* 검색어 */}
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-[#6b7280]">
@@ -183,24 +219,38 @@ export default function AdminOrdersMobileFilter({
                 />
               </div>
 
-              {/* 상태 */}
+              {/* 상태 토글 버튼 */}
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-[#6b7280]">
-                  상태
+                  상태 <span className="font-normal text-[#9ca3af]">(중복 선택 가능)</span>
                 </label>
-                <select
-                  name="status"
-                  defaultValue={status ?? "all"}
-                  className="w-full rounded-xl border border-[#E8E6E1] bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5332C9]/30"
-                >
-                  <option value="all">전체</option>
-                  <option value="pending">입금 대기</option>
-                  <option value="paid">결제 완료</option>
-                  <option value="preparing">상품 준비중</option>
-                  <option value="shipping">배송 중</option>
-                  <option value="delivered">배송 완료</option>
-                  <option value="cancelled">주문 취소</option>
-                </select>
+                <div className="flex flex-wrap gap-1.5">
+                  {/* 전체 */}
+                  <button
+                    type="button"
+                    onClick={() => toggleStatus("all")}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      currentStatuses.length === 0
+                        ? "border-[#5332C9] bg-[#5332C9] text-white"
+                        : "border-[#E8E6E1] bg-white text-[#6b7280]"
+                    }`}
+                  >
+                    전체
+                  </button>
+                  {STATUS_OPTIONS.map((opt) => {
+                    const on = currentStatuses.includes(opt.value);
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => toggleStatus(opt.value)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${on ? opt.active : opt.idle}`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* 날짜 범위 */}

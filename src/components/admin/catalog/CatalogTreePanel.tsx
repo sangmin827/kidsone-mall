@@ -22,6 +22,9 @@ import {
   quickEditCategoryBasics,
   quickEditProductBasics,
   quickToggleProductActive,
+  quickToggleProductNew,
+  quickToggleProductTop10,
+  quickToggleProductSoldOut,
 } from '@/src/server/admin-quick-actions';
 import ProductDetailModal from '@/src/components/admin/products/ProductDetailModal';
 
@@ -168,6 +171,36 @@ export default function CatalogTreePanel({ tree }: Props) {
     runAction('상품이 삭제되었습니다.', () => deleteProduct(fd));
   };
 
+  const handleToggleProductNew = (product: AdminProduct) => {
+    const next = !product.is_new;
+    const fd = new FormData();
+    fd.set('id', String(product.id));
+    fd.set('next_new', String(next));
+    runAction(next ? '신상품으로 설정했습니다.' : '신상품 해제했습니다.', () =>
+      quickToggleProductNew(fd),
+    );
+  };
+
+  const handleToggleProductTop10 = (product: AdminProduct) => {
+    const add = product.top10_rank === null;
+    const fd = new FormData();
+    fd.set('id', String(product.id));
+    fd.set('add', String(add));
+    runAction(add ? 'Top10 맨 아래에 추가했습니다.' : 'Top10에서 제거했습니다.', () =>
+      quickToggleProductTop10(fd),
+    );
+  };
+
+  const handleToggleProductSoldOut = (product: AdminProduct) => {
+    const next = !product.is_sold_out;
+    const fd = new FormData();
+    fd.set('id', String(product.id));
+    fd.set('next_sold_out', String(next));
+    runAction(next ? '품절 처리했습니다.' : '품절 해제했습니다.', () =>
+      quickToggleProductSoldOut(fd),
+    );
+  };
+
   /* ---------------- Modal submit ---------------- */
 
   const handleModalSubmit = async (fd: FormData) => {
@@ -310,6 +343,9 @@ export default function CatalogTreePanel({ tree }: Props) {
               onChangeProductCategory={handleChangeProductCategory}
               onToggleProductActive={handleToggleProductActive}
               onDeleteProduct={handleDeleteProduct}
+              onToggleProductNew={handleToggleProductNew}
+              onToggleProductTop10={handleToggleProductTop10}
+              onToggleProductSoldOut={handleToggleProductSoldOut}
             />
           ))}
         </div>
@@ -394,6 +430,9 @@ type CategoryNodeProps = {
   onChangeProductCategory: (p: AdminProduct, newId: number) => void;
   onToggleProductActive: (p: AdminProduct) => void;
   onDeleteProduct: (p: AdminProduct) => void;
+  onToggleProductNew: (p: AdminProduct) => void;
+  onToggleProductTop10: (p: AdminProduct) => void;
+  onToggleProductSoldOut: (p: AdminProduct) => void;
 };
 
 function CategoryNode(props: CategoryNodeProps) {
@@ -416,6 +455,9 @@ function CategoryNode(props: CategoryNodeProps) {
     onChangeProductCategory,
     onToggleProductActive,
     onDeleteProduct,
+    onToggleProductNew,
+    onToggleProductTop10,
+    onToggleProductSoldOut,
   } = props;
 
   const isOpen = expanded[node.id] ?? false;
@@ -522,6 +564,13 @@ function CategoryNode(props: CategoryNodeProps) {
             </button>
           ) : null}
           <Link
+            href={`/admin/products/new?category_id=${node.id}`}
+            className="rounded-lg border border-emerald-300 px-3 py-1 text-xs text-emerald-700 hover:bg-emerald-50"
+            title="이 카테고리에 상품 추가"
+          >
+            + 상품 추가
+          </Link>
+          <Link
             href="/admin/categories"
             className="rounded-lg border px-3 py-1 text-xs"
             title="카테고리 상세 관리(상위 이동 등)"
@@ -569,6 +618,9 @@ function CategoryNode(props: CategoryNodeProps) {
                   onChangeProductCategory={onChangeProductCategory}
                   onToggleProductActive={onToggleProductActive}
                   onDeleteProduct={onDeleteProduct}
+                  onToggleProductNew={onToggleProductNew}
+                  onToggleProductTop10={onToggleProductTop10}
+                  onToggleProductSoldOut={onToggleProductSoldOut}
                 />
               ))}
             </div>
@@ -628,20 +680,54 @@ function CategoryNode(props: CategoryNodeProps) {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-1">
+                    {/* 신상품 토글 */}
+                    <button
+                      type="button"
+                      onClick={() => onToggleProductNew(p)}
+                      disabled={pending}
+                      title={p.is_new ? '신상품 해제' : '신상품으로 설정'}
+                      className={`rounded-lg border px-2 py-1 text-xs font-medium transition-colors ${
+                        p.is_new
+                          ? 'border-emerald-400 bg-emerald-500 text-white hover:bg-emerald-600'
+                          : 'border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-50'
+                      }`}
+                    >
+                      신상품
+                    </button>
+                    {/* Top10 토글 */}
+                    <button
+                      type="button"
+                      onClick={() => onToggleProductTop10(p)}
+                      disabled={pending}
+                      title={p.top10_rank !== null ? `Top10 제거 (현재 ${p.top10_rank}위)` : 'Top10 맨 아래에 추가'}
+                      className={`rounded-lg border px-2 py-1 text-xs font-medium transition-colors ${
+                        p.top10_rank !== null
+                          ? 'border-rose-400 bg-rose-500 text-white hover:bg-rose-600'
+                          : 'border-rose-200 bg-white text-rose-600 hover:bg-rose-50'
+                      }`}
+                    >
+                      {p.top10_rank !== null ? `TOP${p.top10_rank}` : 'TOP10'}
+                    </button>
+                    {/* 품절 토글 */}
+                    <button
+                      type="button"
+                      onClick={() => onToggleProductSoldOut(p)}
+                      disabled={pending}
+                      title={p.is_sold_out ? '품절 해제' : '품절 처리'}
+                      className={`rounded-lg border px-2 py-1 text-xs font-medium transition-colors ${
+                        p.is_sold_out
+                          ? 'border-gray-500 bg-gray-600 text-white hover:bg-gray-700'
+                          : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      품절
+                    </button>
                     <CategorySelect
                       categories={allCategories}
                       value={p.category_id}
                       onChange={(newId) => onChangeProductCategory(p, newId)}
                       disabled={pending}
                     />
-                    <button
-                      type="button"
-                      onClick={() => onEditProduct(p)}
-                      disabled={pending}
-                      className="rounded-lg border px-2 py-1 text-xs"
-                    >
-                      이름/가격
-                    </button>
                     <button
                       type="button"
                       onClick={() => onToggleProductActive(p)}
@@ -997,63 +1083,46 @@ function sortProducts(
     case 'new':
       arr.sort((a, b) => b.created_at.localeCompare(a.created_at));
       break;
+    default:
+      break;
   }
   return arr;
 }
 
-/**
- * 트리 필터 + 정렬.
- * - 카테고리명 또는 그 안의 상품이 검색어와 매치되면 해당 노드(와 조상 체인)를 유지.
- * - 매치되지 않는 상품은 걸러서 표시.
- */
 function filterAndSortTree(
-  roots: CatalogCategoryNode[],
-  query: string,
+  nodes: CatalogCategoryNode[],
+  q: string,
   sortKey: SortKey,
 ): CatalogCategoryNode[] {
-  const result: CatalogCategoryNode[] = [];
+  return nodes
+    .map((node) => {
+      const filteredChildren = filterAndSortTree(node.children, q, sortKey);
+      const filteredProducts = node.products.filter((p) =>
+        matchesProduct(p, q),
+      );
+      const sortedProducts = sortProducts(filteredProducts, sortKey);
 
-  for (const root of roots) {
-    const filtered = filterNode(root, query, sortKey);
-    if (filtered) result.push(filtered);
-  }
+      if (!q) {
+        return {
+          ...node,
+          children: filteredChildren,
+          products: sortedProducts,
+        };
+      }
 
-  return result;
-}
-
-function filterNode(
-  node: CatalogCategoryNode,
-  query: string,
-  sortKey: SortKey,
-): CatalogCategoryNode | null {
-  const matchedProducts = node.products.filter((p) => matchesProduct(p, query));
-  const matchedChildren: CatalogCategoryNode[] = [];
-  for (const c of node.children) {
-    const fc = filterNode(c, query, sortKey);
-    if (fc) matchedChildren.push(fc);
-  }
-
-  const selfMatched = matchesCategory(node, query);
-  const hasContent = matchedProducts.length > 0 || matchedChildren.length > 0;
-
-  if (!selfMatched && !hasContent) {
-    return null;
-  }
-
-  // 카테고리 자체가 매치되면 자식 전부 유지, 아니면 매치된 것만 유지
-  const productsForNode = selfMatched
-    ? sortProducts(node.products, sortKey)
-    : sortProducts(matchedProducts, sortKey);
-
-  const childrenForNode = selfMatched
-    ? node.children
-        .map((c) => filterNode(c, '', sortKey))
-        .filter((x): x is CatalogCategoryNode => !!x)
-    : matchedChildren;
-
-  return {
-    ...node,
-    products: productsForNode,
-    children: childrenForNode,
-  };
+      const selfMatch = matchesCategory(node, q);
+      if (
+        selfMatch ||
+        filteredChildren.length > 0 ||
+        filteredProducts.length > 0
+      ) {
+        return {
+          ...node,
+          children: filteredChildren,
+          products: selfMatch ? sortProducts(node.products, sortKey) : sortedProducts,
+        };
+      }
+      return null;
+    })
+    .filter(Boolean) as CatalogCategoryNode[];
 }

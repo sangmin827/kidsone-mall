@@ -1,13 +1,44 @@
+'use client';
+
+import { useRef, useState } from 'react';
 import type { AdminCategory } from '@/src/server/admin-categories';
 import type { AdminProduct } from '@/src/server/admin-products';
 import ProductImageManager from '@/src/components/admin/products/ProductImageManager';
 import AdminFormShell from '@/src/components/admin/common/AdminFormShell';
 import SubmitButton from '@/src/components/admin/common/SubmitButton';
 
+// ── 한글 → 로마자 슬러그 변환 ─────────────────────────────────────────────
+const CHO  = ['g','gg','n','d','dd','r','m','b','bb','s','ss','','j','jj','ch','k','t','p','h'];
+const JUNG = ['a','ae','ya','yae','eo','e','yeo','ye','o','wa','wae','oe','yo','u','weo','we','wi','yu','eu','ui','i'];
+const JONG = ['','g','gg','gs','n','nj','nh','d','r','rg','rm','rb','rs','rt','rp','rh','m','b','bs','s','ss','ng','j','ch','k','t','p','h'];
+
+function nameToSlug(name: string): string {
+  let romanized = '';
+  for (const ch of name) {
+    const code = ch.charCodeAt(0);
+    if (code >= 0xac00 && code <= 0xd7a3) {
+      const syl = code - 0xac00;
+      const jong = syl % 28;
+      const jung = Math.floor(syl / 28) % 21;
+      const cho  = Math.floor(syl / 28 / 21);
+      romanized += CHO[cho] + JUNG[jung] + JONG[jong];
+    } else {
+      romanized += ch;
+    }
+  }
+  return romanized
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 type Props = {
   defaultValue?: AdminProduct | null;
   categories: AdminCategory[];
   action: (formData: FormData) => Promise<void>;
+  defaultCategoryId?: number | null;
 };
 
 function Section({
@@ -62,8 +93,25 @@ export default function ProductForm({
   defaultValue,
   categories,
   action,
+  defaultCategoryId,
 }: Props) {
   const isEdit = !!defaultValue;
+
+  // 슬러그 자동 생성: 새 상품일 때만 이름→슬러그 연동
+  const [slugValue, setSlugValue] = useState(defaultValue?.slug ?? '');
+  const slugManuallyEdited = useRef(!!defaultValue?.slug);
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isEdit) return; // 수정 모드에서는 자동 변경하지 않음
+    if (!slugManuallyEdited.current) {
+      setSlugValue(nameToSlug(e.target.value));
+    }
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSlugValue(e.target.value);
+    slugManuallyEdited.current = e.target.value.length > 0;
+  };
 
   // 상위 / 하위 카테고리 옵션으로 변환 (level 기반 들여쓰기)
   const sortedCategories = [...categories].sort((a, b) => {
@@ -94,6 +142,7 @@ export default function ProductForm({
               type="text"
               name="name"
               defaultValue={defaultValue?.name ?? ''}
+              onChange={handleNameChange}
               className={inputBase}
               placeholder="예: 한국기어 공룡 장난감"
               required
@@ -103,12 +152,13 @@ export default function ProductForm({
           <Field
             label="슬러그 (URL)"
             required
-            hint="URL 주소에 사용됩니다. 영문 소문자·숫자·하이픈(-)만 권장."
+            hint={isEdit ? 'URL 주소에 사용됩니다. 영문 소문자·숫자·하이픈(-)만 권장.' : '상품명 입력 시 자동 생성됩니다. 직접 수정도 가능합니다.'}
           >
             <input
               type="text"
               name="slug"
-              defaultValue={defaultValue?.slug ?? ''}
+              value={slugValue}
+              onChange={handleSlugChange}
               className={inputBase}
               placeholder="예: korea-gear-dino"
               required
@@ -125,7 +175,9 @@ export default function ProductForm({
                 defaultValue?.category_id !== undefined &&
                 defaultValue?.category_id !== null
                   ? String(defaultValue.category_id)
-                  : ''
+                  : defaultCategoryId
+                    ? String(defaultCategoryId)
+                    : ''
               }
               className={inputBase}
             >

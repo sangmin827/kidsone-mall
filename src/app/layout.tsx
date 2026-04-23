@@ -73,9 +73,7 @@ export default async function RootLayout({
             HEADER — sticky top-0, 항상 고정 (절대 숨겨지지 않음)
         ══════════════════════════════════════════════════════ */}
         <header className="sticky top-0 z-50 border-b border-[#E8E6E1] bg-white/95 backdrop-blur-sm">
-          {/* ━━━ 모바일 / 태블릿 (md 미만) ━━━
-              [검색] | [로고 중앙] | [장바구니] [사람아이콘] [주문조회(비로그인)]
-          */}
+          {/* ━━━ 모바일 / 태블릿 (md 미만) ━━━ */}
           <div className="flex h-14 items-center px-3 md:hidden">
             {/* 왼쪽: 검색 */}
             <HeaderSearch />
@@ -101,7 +99,30 @@ export default async function RootLayout({
               {user ? (
                 /* ── 로그인 상태 ── */
                 <>
-                  {/* 장바구니 → /mypage/cart (배지 포함) */}
+                  {/* 찜하기 */}
+                  <Link
+                    href="/mypage/wishlist"
+                    title="찜한 상품"
+                    aria-label="찜한 상품"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6b7280] transition-colors hover:bg-[#FAF9F6] hover:text-[#FF5555]"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                  </Link>
+
+                  {/* 장바구니 (배지 오른쪽 하단) */}
                   <Link
                     href="/mypage/cart"
                     title="장바구니"
@@ -125,13 +146,13 @@ export default async function RootLayout({
                       <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
                     </svg>
                     {cartItemCount > 0 && (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF5555] text-[9px] font-bold text-white shadow-sm">
+                      <span className="absolute -right-0.5 -bottom-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF5555] text-[9px] font-bold text-white shadow-sm">
                         {cartItemCount > 9 ? "9+" : cartItemCount}
                       </span>
                     )}
                   </Link>
 
-                  {/* 마이페이지 — 꽉 찬 보라색 사람 아이콘 */}
+                  {/* 마이페이지 */}
                   <Link
                     href="/mypage"
                     title="마이페이지"
@@ -153,7 +174,6 @@ export default async function RootLayout({
                 </>
               ) : (
                 /* ── 비로그인 상태 ── */
-                /* 장바구니 클릭 → 로그인 모달 / 사람 아이콘 클릭 → 로그인 모달 / 주문조회 텍스트 */
                 <Suspense
                   fallback={
                     <div className="flex items-center gap-0.5">
@@ -163,7 +183,6 @@ export default async function RootLayout({
                     </div>
                   }
                 >
-                  {/* 빈 사람 아이콘 → 로그인 모달 */}
                   <LoginTrigger className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6b7280] transition-colors hover:bg-[#FAF9F6] hover:text-[#5332C9]">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -182,7 +201,6 @@ export default async function RootLayout({
                     </svg>
                   </LoginTrigger>
 
-                  {/* 주문조회 — 작은 보조 텍스트 */}
                   <Link
                     href="/guest-order"
                     className="flex-none px-1.5 text-[11px] font-medium text-[#9ca3af] whitespace-nowrap transition-colors hover:text-[#6b7280]"
@@ -194,9 +212,7 @@ export default async function RootLayout({
             </div>
           </div>
 
-          {/* ━━━ 데스크톱 (md 이상) ━━━
-              [로고] [카테고리 nav] [검색바 + 아이콘 액션]
-          */}
+          {/* ━━━ 데스크톱 (md 이상) ━━━ */}
           <div className="mx-auto hidden h-14 max-w-7xl items-center justify-between gap-4 px-6 md:flex">
             {/* 로고 */}
             <Link href="/" className="flex-shrink-0" aria-label="Kids One 홈">
@@ -219,7 +235,30 @@ export default async function RootLayout({
 
               {user ? (
                 <>
-                  {/* 장바구니 (배지 포함) */}
+                  {/* 찜하기 */}
+                  <Link
+                    href="/mypage/wishlist"
+                    title="찜한 상품"
+                    aria-label="찜한 상품"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-[#6b7280] transition-colors hover:bg-[#FAF9F6] hover:text-[#FF5555]"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                  </Link>
+
+                  {/* 장바구니 (배지 오른쪽 하단) */}
                   <Link
                     href="/mypage/cart"
                     title="장바구니"
@@ -243,7 +282,7 @@ export default async function RootLayout({
                       <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
                     </svg>
                     {cartItemCount > 0 && (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF5555] text-[9px] font-bold text-white shadow-sm">
+                      <span className="absolute -right-0.5 -bottom-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF5555] text-[9px] font-bold text-white shadow-sm">
                         {cartItemCount > 9 ? "9+" : cartItemCount}
                       </span>
                     )}
@@ -311,11 +350,7 @@ export default async function RootLayout({
           </div>
         </header>
 
-        {/* ══════════════════════════════════════════════════════
-            탭 네비게이션 — ScrollRevealBar 로 감싸서 스크롤 시 숨김/노출
-            헤더(z-50) 뒤로 슬라이드되어 자연스럽게 사라짐
-            md:hidden 은 ScrollRevealBar 내부에서 처리
-        ══════════════════════════════════════════════════════ */}
+        {/* 탭 네비게이션 */}
         <ScrollRevealBar>
           <Suspense
             fallback={
@@ -326,7 +361,7 @@ export default async function RootLayout({
           </Suspense>
         </ScrollRevealBar>
 
-        {/* ── Page Content ── */}
+        {/* Page Content */}
         <div className="min-h-screen">{children}</div>
 
         <Footer />

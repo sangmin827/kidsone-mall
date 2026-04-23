@@ -1,14 +1,26 @@
 import Link from "next/link";
 import { getAdminOrders } from "@/src/server/orders";
 import AdminOrdersMobileFilter from "@/src/components/admin/orders/AdminOrdersMobileFilter";
+import AdminOrdersStatusFilter from "@/src/components/admin/orders/AdminOrdersStatusFilter";
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
-  pending:   { label: "입금 대기",   cls: "bg-amber-50  text-amber-700  border-amber-200"  },
-  paid:      { label: "결제 완료",   cls: "bg-green-50  text-green-700  border-green-200"  },
-  preparing: { label: "상품 준비중", cls: "bg-blue-50   text-blue-700   border-blue-200"   },
-  shipping:  { label: "배송 중",     cls: "bg-[#ede9fb] text-[#5332C9] border-[#c4b5fd]"  },
-  delivered: { label: "배송 완료",   cls: "bg-[#FAF9F6] text-[#6b7280] border-gray-200"   },
-  cancelled: { label: "주문 취소",   cls: "bg-red-50    text-[#FF5555] border-red-200"    },
+  pending:          { label: "입금 대기",   cls: "bg-amber-50  text-amber-700  border-amber-200"  },
+  paid:             { label: "결제 완료",   cls: "bg-green-50  text-green-700  border-green-200"  },
+  preparing:        { label: "상품 준비중", cls: "bg-blue-50   text-blue-700   border-blue-200"   },
+  shipping:         { label: "배송 중",     cls: "bg-[#ede9fb] text-[#5332C9] border-[#c4b5fd]"  },
+  delivered:        { label: "배송 완료",   cls: "bg-[#FAF9F6] text-[#6b7280] border-gray-200"   },
+  cancelled:        { label: "주문 취소",   cls: "bg-red-50    text-[#FF5555] border-red-200"    },
+};
+
+// 취소/반품 요청 뱃지 설정
+const CR_BADGE: Record<string, { label: string; cls: string }> = {
+  requested:         { label: "취소요청",  cls: "bg-orange-50 text-orange-700 border-orange-200" },
+  withdraw_requested:{ label: "취소철회",  cls: "bg-[#fefce8] text-[#92400e] border-[#fef08a]"   },
+};
+const RR_BADGE: Record<string, { label: string; cls: string }> = {
+  requested:         { label: "반품요청",  cls: "bg-blue-50   text-blue-700  border-blue-200"    },
+  withdraw_requested:{ label: "반품철회",  cls: "bg-[#fefce8] text-[#92400e] border-[#fef08a]"   },
+  completed:         { label: "반품완료",  cls: "bg-green-50  text-green-700 border-green-200"   },
 };
 
 const SORT_OPTIONS = [
@@ -33,6 +45,12 @@ type Props = {
 export default async function AdminOrdersPage({ searchParams }: Props) {
   const { search, status, dateFrom, dateTo, sort } = await searchParams;
 
+  // 쉼표 구분 다중 상태 파싱
+  const statuses = (status ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s && s !== "all");
+
   const validSort =
     sort === "oldest" || sort === "amount_desc" || sort === "amount_asc"
       ? sort
@@ -40,13 +58,13 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
 
   const orders = await getAdminOrders({
     search: search?.trim() || undefined,
-    status: status || undefined,
+    statuses: statuses.length > 0 ? statuses : undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     sort: validSort,
   });
 
-  const hasFilter = !!(search || (status && status !== "all") || dateFrom || dateTo);
+  const hasFilter = !!(search || statuses.length > 0 || dateFrom || dateTo);
 
   // Build export URL with current filters
   const exportParams = new URLSearchParams();
@@ -91,11 +109,21 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
         sort={validSort}
       />
 
-      {/* 검색 / 필터 — 데스크탑 전용 */}
+      {/* 상태 토글 버튼 — 데스크탑 + 모바일 공용 */}
+      <div className="rounded-2xl border border-[#E8E6E1] bg-white p-4">
+        <AdminOrdersStatusFilter currentStatuses={statuses} />
+      </div>
+
+      {/* 검색 / 날짜·정렬 필터 — 데스크탑 전용 */}
       <form
         method="get"
         className="hidden md:block rounded-2xl border border-[#E8E6E1] bg-white p-4 space-y-3"
       >
+        {/* status hidden: 버튼 토글로 이미 URL에 반영되므로 현재값 보존 */}
+        {statuses.length > 0 && (
+          <input type="hidden" name="status" value={statuses.join(",")} />
+        )}
+
         {/* 검색어 */}
         <div className="flex gap-2">
           <input
@@ -121,25 +149,8 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
           )}
         </div>
 
-        {/* 상태 · 날짜 · 정렬 */}
+        {/* 날짜 · 정렬 */}
         <div className="flex flex-wrap gap-3">
-          <div>
-            <label className="mb-1 block text-[11px] font-medium text-[#9ca3af]">상태</label>
-            <select
-              name="status"
-              defaultValue={status ?? "all"}
-              className="rounded-xl border border-[#E8E6E1] bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5332C9]/30"
-            >
-              <option value="all">전체</option>
-              <option value="pending">입금 대기</option>
-              <option value="paid">결제 완료</option>
-              <option value="preparing">상품 준비중</option>
-              <option value="shipping">배송 중</option>
-              <option value="delivered">배송 완료</option>
-              <option value="cancelled">주문 취소</option>
-            </select>
-          </div>
-
           <div>
             <label className="mb-1 block text-[11px] font-medium text-[#9ca3af]">시작일</label>
             <input
@@ -206,6 +217,11 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
               const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, cls: "bg-[#FAF9F6] text-[#6b7280] border-gray-200" };
               const memo = order.admin_memo ?? "";
               const memoTruncated = memo.length > MEMO_MAX ? memo.slice(0, MEMO_MAX) + "..." : memo;
+              // 취소/반품 요청 뱃지
+              const crStatus = order.cancel_requests?.[0]?.status;
+              const rrStatus = order.return_requests?.[0]?.status;
+              const crBadge = crStatus ? CR_BADGE[crStatus] : null;
+              const rrBadge = rrStatus ? RR_BADGE[rrStatus] : null;
 
               return (
                 <Link
@@ -217,9 +233,21 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
                   <div className="md:hidden space-y-1">
                     {/* 행 1: 상태 + 금액 */}
                     <div className="flex items-center justify-between">
-                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${cfg.cls}`}>
-                        {cfg.label}
-                      </span>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${cfg.cls}`}>
+                          {cfg.label}
+                        </span>
+                        {crBadge && (
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${crBadge.cls}`}>
+                            {crBadge.label}
+                          </span>
+                        )}
+                        {rrBadge && (
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${rrBadge.cls}`}>
+                            {rrBadge.label}
+                          </span>
+                        )}
+                      </div>
                       <span className="text-sm font-bold text-[#222222]">
                         {order.total_amount.toLocaleString()}<span className="ml-0.5 text-xs font-normal text-[#6b7280]">원</span>
                       </span>
@@ -273,10 +301,20 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
                     </div>
 
                     {/* 상태 배지 */}
-                    <div>
+                    <div className="flex flex-col gap-1">
                       <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${cfg.cls}`}>
                         {cfg.label}
                       </span>
+                      {crBadge && (
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${crBadge.cls}`}>
+                          {crBadge.label}
+                        </span>
+                      )}
+                      {rrBadge && (
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${rrBadge.cls}`}>
+                          {rrBadge.label}
+                        </span>
+                      )}
                     </div>
 
                     {/* 금액 */}

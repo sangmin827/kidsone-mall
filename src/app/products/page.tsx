@@ -3,6 +3,8 @@ import Image from "next/image";
 import { Suspense } from "react";
 import { createClient } from "@/src/lib/supabase/server";
 import ProductsToolbar from "@/src/components/products/ProductsToolbar";
+import WishlistIconButton from "@/src/components/product/WishlistIconButton";
+import { getWishlistProductIds } from "@/src/server/wishlist";
 
 type SortKey = "new" | "price_asc" | "price_desc" | "name_asc" | "name_desc";
 
@@ -28,8 +30,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const { q, sort, view, category } = await searchParams;
   const sortKey = normalizeSort(sort);
   const isTop10 = view === "top10";
-  // view=new : 관리자가 is_new=true 로 명시 설정한 상품만 노출
-  // sort=new (기본) : 최신 등록순 (is_new 여부와 완전히 분리)
   const isNewView = view === "new";
   const searchTerm = (q ?? "").trim();
   const supabase = await createClient();
@@ -41,38 +41,21 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     .or("is_sold_out.eq.false,hide_when_sold_out.eq.false");
 
   if (searchTerm) query = query.ilike("name", `%${searchTerm}%`);
-
-  // 세트상품은 /sets 전용 페이지에 노출 → 전체상품 목록에서 항상 제외
   query = query.eq("is_set", false);
 
   if (category) {
-    // 특정 카테고리 필터
     const { data: categoryRow } = await supabase.from("categories").select("id").eq("slug", category).maybeSingle();
     if (categoryRow?.id) query = query.eq("category_id", categoryRow.id);
   }
 
-  // ── 뷰 / 정렬 적용 ──────────────────────────────────────────────────
-  //
-  //  view=top10  → top10_rank IS NOT NULL 필터 + rank 순 정렬 (sort 무시)
-  //  view=new    → is_new=true 필터 + 선택된 sort 적용
-  //  (기본)      → 전체 상품 + 선택된 sort 적용
-  //
-  //  sort=new    → 최신 등록순 (id DESC). is_new 여부와 무관.
-  //  sort=price* → 가격순
-  //  sort=name*  → 상품명순
-  //
   if (isTop10) {
     query = query
       .not("top10_rank", "is", null)
       .order("top10_rank", { ascending: true })
       .limit(100);
   } else {
-    // view=new 일 때만 is_new=true 필터 추가
     if (isNewView) query = query.eq("is_new", true);
-
-    // 정렬 적용
     if (sortKey === "new") {
-      // "최신 등록순" — 등록일(id) 기준. 신상품 여부와 완전히 분리.
       query = query.order("id", { ascending: false });
     } else {
       const colMap: Record<string, { col: string; asc: boolean }> = {
@@ -86,16 +69,12 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     }
   }
 
-  const { data: products, error } = await query;
+  const [{ data: products, error }, wishlistIds] = await Promise.all([
+    query,
+    getWishlistProductIds(),
+  ]);
 
-  // ── 제목 규칙 ──────────────────────────────────────────────────────
-  //  정렬이나 필터 상태에 관계없이 "전체 상품 목록" 으로 고정.
-  //  특수 뷰(top10 / new)만 각자의 제목을 유지.
-  const heading = isTop10
-    ? "Top 10 인기상품"
-    : isNewView
-    ? "신상품"
-    : "전체 상품 목록";
+  const heading = isTop10 ? "Top 10 인기상품" : isNewView ? "신상품" : "전체 상품 목록";
 
   const emptyMessage = isNewView
     ? { title: "등록된 신상품이 없습니다", sub: "관리자에서 상품에 신상품 표시를 설정해 주세요." }
@@ -105,7 +84,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   return (
     <main className="min-h-screen bg-[#FAF9F6]">
-      {/* ── 페이지 헤더 ── */}
       <div className="bg-white border-b border-[#E8E6E1]">
         <div className="section-inner py-6 sm:py-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -118,7 +96,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 </p>
               )}
             </div>
-            {/* 특수 뷰 뱃지 */}
             {isTop10 && (
               <div className="flex items-center gap-2 rounded-full bg-[#fff0f0] px-4 py-1.5">
                 <span className="text-sm">🏆</span>
@@ -134,7 +111,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           <ProductsToolbar />
         </Suspense>
 
-        {/* 에러 */}
         {error && (
           <div className="mt-8 rounded-2xl border border-red-100 bg-red-50 p-8 text-center">
             <p className="text-sm font-medium text-red-600">상품을 불러오지 못했습니다.</p>
@@ -142,7 +118,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           </div>
         )}
 
-        {/* 빈 상태 */}
         {!error && (!products || products.length === 0) && (
           <div className="mt-10 flex flex-col items-center justify-center gap-5 rounded-3xl border border-[#E8E6E1] bg-white py-16 px-8 text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#FAF9F6] text-4xl">
@@ -156,7 +131,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           </div>
         )}
 
-        {/* 상품 그리드 */}
         {!error && products && products.length > 0 && (
           <>
             <p className="mb-4 text-sm text-[#9ca3af]">총 {products.length}개의 상품</p>
@@ -171,7 +145,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                   <Link
                     key={product.id}
                     href={`/products/${product.slug}`}
-                    className="group block overflow-hidden rounded-2xl bg-white border border-[#E8E6E1] transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+                    className="group relative block overflow-hidden rounded-2xl bg-white border border-[#E8E6E1] transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
                   >
                     <div className="relative aspect-square overflow-hidden bg-[#f5f4f1]">
                       <Image
@@ -190,6 +164,11 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                           <span className="badge-sold-out">품절</span>
                         </div>
                       )}
+                      <WishlistIconButton
+                        productId={product.id}
+                        initialWishlisted={wishlistIds.has(product.id)}
+                        className="absolute bottom-2 right-2 z-10"
+                      />
                     </div>
                     <div className="px-3 py-3">
                       <h2 className="line-clamp-2 text-sm font-medium leading-snug text-[#222222]">{product.name}</h2>

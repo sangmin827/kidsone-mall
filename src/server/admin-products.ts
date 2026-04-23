@@ -7,6 +7,7 @@ export type AdminProductImage = {
   is_thumbnail: boolean;
   sort_order: number;
   storage_path: string | null;
+  image_type: "gallery" | "detail";
 };
 
 export type AdminProduct = {
@@ -32,7 +33,7 @@ const PRODUCT_COLUMNS =
   'id, name, slug, price, stock, short_description, description, category_id, is_active, is_new, is_set, top10_rank, is_sold_out, hide_when_sold_out, created_at';
 
 const PRODUCT_IMAGE_COLUMNS =
-  'id, product_id, image_url, is_thumbnail, sort_order, storage_path';
+  'id, product_id, image_url, is_thumbnail, sort_order, storage_path, image_type';
 
 export async function getAdminProducts(): Promise<AdminProduct[]> {
   const { supabase } = await requireAdmin();

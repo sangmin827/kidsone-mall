@@ -2,8 +2,17 @@ import ProductForm from '@/src/components/admin/products/ProductForm';
 import { getAdminCategories } from '@/src/server/admin-categories';
 import { createProduct } from '@/src/server/admin-product-actions';
 
-export default async function AdminNewProductPage() {
-  const categories = await getAdminCategories();
+type PageProps = {
+  searchParams: Promise<{ category_id?: string }>;
+};
+
+export default async function AdminNewProductPage({ searchParams }: PageProps) {
+  const [categories, params] = await Promise.all([
+    getAdminCategories(),
+    searchParams,
+  ]);
+
+  const defaultCategoryId = params.category_id ? Number(params.category_id) : null;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -14,7 +23,11 @@ export default async function AdminNewProductPage() {
         </p>
       </div>
 
-      <ProductForm categories={categories} action={createProduct} />
+      <ProductForm
+        categories={categories}
+        action={createProduct}
+        defaultCategoryId={defaultCategoryId}
+      />
     </div>
   );
 }

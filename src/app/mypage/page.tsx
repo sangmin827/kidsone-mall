@@ -3,6 +3,7 @@ import Image from "next/image";
 import { createClient } from "@/src/lib/supabase/server";
 import { getMyOrders } from "@/src/server/orders";
 import { getMyCart } from "@/src/server/cart";
+import { getWishlistProductIds } from "@/src/server/wishlist";
 
 // ── 주문 상태 한국어 + 스타일 매핑 ──────────────────────────
 const STATUS_MAP: Record<
@@ -48,10 +49,10 @@ const STATUS_MAP: Record<
 };
 
 const QUICK_ACTIONS = [
-  { href: "/mypage/cart", icon: "🛒", label: "장바구니" },
-  { href: "/mypage/addresses", icon: "📍", label: "주소지" },
-  { href: "/mypage/profile", icon: "✏️", label: "내 정보" },
-  { href: "/mypage/orders", icon: "📦", label: "전체 주문" },
+  { href: "/mypage/cart",      icon: "🛒", label: "장바구니" },
+  { href: "/mypage/wishlist",  icon: "🤍", label: "찜한 상품" },
+  { href: "/mypage/profile",   icon: "✏️", label: "내 정보"  },
+  { href: "/mypage/addresses", icon: "📍", label: "배송지"   },
 ];
 
 const MENU_ITEMS = [
@@ -59,6 +60,11 @@ const MENU_ITEMS = [
     href: "/mypage/orders",
     title: "주문내역",
     desc: "주문한 상품과 배송 상태 확인",
+  },
+  {
+    href: "/mypage/wishlist",
+    title: "찜한 상품",
+    desc: "찜해둔 상품 모아보기",
   },
   {
     href: "/mypage/cart",
@@ -128,6 +134,15 @@ export default async function MyPage() {
   try {
     const cart = await getMyCart();
     cartCount = cart.items.length;
+  } catch {
+    /* 무시 */
+  }
+
+  // ── 찜한 상품 ──────────────────────────────────────────────
+  let wishlistCount = 0;
+  try {
+    const ids = await getWishlistProductIds();
+    wishlistCount = ids.size;
   } catch {
     /* 무시 */
   }
@@ -235,6 +250,12 @@ export default async function MyPage() {
                 {a.href === "/mypage/cart" && cartCount > 0 && (
                   <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5555] text-[10px] font-bold text-white shadow">
                     {cartCount > 9 ? "9+" : cartCount}
+                  </span>
+                )}
+                {/* 찜한 상품 뱃지 */}
+                {a.href === "/mypage/wishlist" && wishlistCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#FF5555] text-[10px] font-bold text-white shadow">
+                    {wishlistCount > 9 ? "9+" : wishlistCount}
                   </span>
                 )}
               </Link>

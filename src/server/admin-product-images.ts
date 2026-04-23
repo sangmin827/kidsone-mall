@@ -85,12 +85,15 @@ export async function uploadProductImage(formData: FormData) {
 
   const hasThumbnail = (existingImages ?? []).some((img) => img.is_thumbnail);
 
+  const imageType = String(formData.get('imageType') ?? 'gallery');
+
   const { error: insertError } = await supabase.from('product_images').insert({
     product_id: productId,
     image_url: publicUrl,
     storage_path: storagePath,
     sort_order: nextSortOrder,
-    is_thumbnail: !hasThumbnail, // 첫 이미지면 썸네일로 자동 지정
+    is_thumbnail: imageType === 'gallery' && !hasThumbnail, // 갤러리 첫 이미지면 썸네일로 자동 지정
+    image_type: imageType,
   });
 
   if (insertError) {
@@ -251,10 +254,13 @@ export async function moveProductImage(formData: FormData) {
     throw new Error('이동 방향이 올바르지 않습니다.');
   }
 
+  const imageType = String(formData.get('imageType') ?? 'gallery');
+
   const { data: images, error } = await supabase
     .from('product_images')
     .select('id, sort_order')
     .eq('product_id', productId)
+    .eq('image_type', imageType)
     .order('sort_order', { ascending: true });
 
   if (error || !images) {

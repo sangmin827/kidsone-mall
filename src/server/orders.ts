@@ -25,6 +25,8 @@ export type CancelRequest = {
   refund_bank: string | null;
   refund_account_number: string | null;
   refund_account_name: string | null;
+  admin_memo: string | null;
+  customer_notice: string | null;
   created_at: string;
 };
 
@@ -39,6 +41,8 @@ export type ReturnRequest = {
     | "withdraw_requested"
     | "withdraw_completed";
   reason: string | null;
+  admin_memo: string | null;
+  customer_notice: string | null;
   created_at: string;
 };
 
@@ -65,6 +69,8 @@ export type MyOrder = {
   detail_address: string | null;
   request_message: string | null;
   created_at: string;
+  courier_code: string | null;
+  tracking_number: string | null;
   order_items: MyOrderItem[];
   cancel_request: CancelRequest | null;
   return_request: ReturnRequest | null;
@@ -233,6 +239,8 @@ export async function getMyOrders(): Promise<MyOrder[]> {
       detail_address,
       request_message,
       created_at,
+      courier_code,
+      tracking_number,
       order_items (
         id,
         product_id,
@@ -248,6 +256,8 @@ export async function getMyOrders(): Promise<MyOrder[]> {
         refund_bank,
         refund_account_number,
         refund_account_name,
+        admin_memo,
+        customer_notice,
         created_at
       ),
       return_requests (
@@ -255,6 +265,8 @@ export async function getMyOrders(): Promise<MyOrder[]> {
         type,
         status,
         reason,
+        admin_memo,
+        customer_notice,
         created_at
       )
     `,
@@ -812,7 +824,11 @@ export type AdminOrder = {
   admin_memo: string | null;
   is_guest: boolean;
   created_at: string;
+  courier_code: string | null;
+  tracking_number: string | null;
   order_items: AdminOrderItem[];
+  cancel_requests: Array<{ id: number; status: string; type: string }>;
+  return_requests: Array<{ id: number; status: string; type: string }>;
 };
 
 async function requireAdmin() {
@@ -865,22 +881,31 @@ const ADMIN_ORDER_SELECT = `
   admin_memo,
   is_guest,
   created_at,
+  courier_code,
+  tracking_number,
   order_items (
     id,
     product_id,
     product_name_snapshot,
     price_snapshot,
     quantity
-  )
+  ),
+  cancel_requests (id, status, type),
+  return_requests (id, status, type)
 `;
 
 export type AdminOrdersFilter = {
   search?: string;
-  status?: string;
+  /** URL의 status 파라미터를 쉼표 분리한 배열. 비어있으면 전체 조회 */
+  statuses?: string[];
   dateFrom?: string;
   dateTo?: string;
   sort?: "newest" | "oldest" | "amount_desc" | "amount_asc";
 };
+
+const REGULAR_STATUSES = new Set([
+  "pending", "paid", "preparing", "shipping", "delivered", "cancelled",
+]);
 
 export async function getAdminOrders(
   params?: AdminOrdersFilter,
@@ -897,8 +922,83 @@ export async function getAdminOrders(
     );
   }
 
-  if (params?.status && params.status !== "all") {
-    query = query.eq("status", params.status);
+  const activeStatuses = (params?.statuses ?? []).filter(
+    (s) => s && s !== "all",
+  );
+
+  if (activeStatuses.length > 0) {
+    const regularList = activeStatuses.filter((s) => REGULAR_STATUSES.has(s));
+    const hasCancel   = activeStatuses.includes("cancel_requested");
+    const hasReturnReq = activeStatuses.includes("return_requested");
+    const hasReturnDone = activeStatuses.includes("return_completed");
+
+    if (activeStatuses.length === 1) {
+      // ── 단일 선택: 기존 방식 유지 (효율적) ───────────────────────
+      const s = activeStatuses[0];
+      if (s === "cancel_requested") {
+        const { data: reqs } = await supabase
+          .from("cancel_requests")
+          .select("order_id")
+          .in("status", ["requested", "withdraw_requested"]);
+        const ids = (reqs ?? []).map((r) => r.order_id);
+        if (ids.length === 0) return [];
+        query = query.in("id", ids);
+      } else if (s === "return_requested") {
+        const { data: reqs } = await supabase
+          .from("return_requests")
+          .select("order_id")
+          .in("status", ["requested", "withdraw_requested"]);
+        const ids = (reqs ?? []).map((r) => r.order_id);
+        if (ids.length === 0) return [];
+        query = query.in("id", ids);
+      } else if (s === "return_completed") {
+        const { data: reqs } = await supabase
+          .from("return_requests")
+          .select("order_id")
+          .eq("status", "completed");
+        const ids = (reqs ?? []).map((r) => r.order_id);
+        if (ids.length === 0) return [];
+        query = query.in("id", ids);
+      } else {
+        query = query.eq("status", s);
+      }
+    } else {
+      // ── 다중 선택: 각 그룹에서 order_id 수집 후 합집합 ───────────
+      const idSet = new Set<number>();
+
+      if (regularList.length > 0) {
+        const { data } = await supabase
+          .from("orders")
+          .select("id")
+          .in("status", regularList);
+        (data ?? []).forEach((o) => idSet.add(o.id));
+      }
+      if (hasCancel) {
+        const { data } = await supabase
+          .from("cancel_requests")
+          .select("order_id")
+          .in("status", ["requested", "withdraw_requested"]);
+        (data ?? []).forEach((r) => idSet.add(r.order_id));
+      }
+      if (hasReturnReq) {
+        const { data } = await supabase
+          .from("return_requests")
+          .select("order_id")
+          .in("status", ["requested", "withdraw_requested"]);
+        (data ?? []).forEach((r) => idSet.add(r.order_id));
+      }
+      if (hasReturnDone) {
+        const { data } = await supabase
+          .from("return_requests")
+          .select("order_id")
+          .eq("status", "completed");
+        (data ?? []).forEach((r) => idSet.add(r.order_id));
+      }
+
+      const allIds = [...idSet];
+      if (allIds.length === 0) return [];
+      query = query.in("id", allIds);
+    }
   }
 
   if (params?.dateFrom) {
@@ -1008,4 +1108,38 @@ export async function updateOrderMemo(formData: FormData) {
 
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${orderId}`);
+}
+
+// ── 송장번호 저장 ─────────────────────────────────────────────────────────
+export async function updateOrderTracking(formData: FormData) {
+  "use server";
+
+  const { supabase } = await requireAdmin();
+
+  const orderId = Number(formData.get("orderId"));
+  const courier_code = String(formData.get("courier_code") ?? "").trim() || null;
+  const tracking_number = String(formData.get("tracking_number") ?? "").trim() || null;
+
+  if (!orderId) throw new Error("잘못된 요청입니다.");
+
+  // 송장번호 입력 시 상태를 '배송 중'으로 자동 변경
+  const updatePayload: Record<string, unknown> = {
+    courier_code,
+    tracking_number,
+    updated_at: new Date().toISOString(),
+  };
+  if (tracking_number) {
+    updatePayload.status = "shipping";
+  }
+
+  const { error } = await supabase
+    .from("orders")
+    .update(updatePayload)
+    .eq("id", orderId);
+
+  if (error) throw new Error(`송장번호 저장 실패: ${error.message}`);
+
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/mypage/orders");
 }

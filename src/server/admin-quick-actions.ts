@@ -244,3 +244,124 @@ export async function quickEditCategoryBasics(formData: FormData) {
   revalidatePath('/admin/categories');
   revalidatePath('/');
 }
+
+/* ===================== 카탈로그 상품 빠른 토글 ===================== */
+
+/**
+ * 신상품 여부 토글.
+ */
+export async function quickToggleProductNew(formData: FormData) {
+  const { adminUserId } = await requireAdmin();
+
+  const id = Number(formData.get('id'));
+  const nextNew = formData.get('next_new') === 'true';
+
+  if (!id) throw new Error('상품 ID가 올바르지 않습니다.');
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('products')
+    .update({ is_new: nextNew })
+    .eq('id', id);
+
+  if (error) throw new Error(`신상품 설정 실패: ${error.message}`);
+
+  await writeAdminActivityLog({
+    adminUserId,
+    action: 'update',
+    entityType: 'product',
+    entityId: String(id),
+    afterData: { is_new: nextNew },
+    description: `상품 신상품 ${nextNew ? '설정' : '해제'}`,
+  });
+
+  revalidatePath('/admin/catalog');
+  revalidatePath('/admin/products');
+  revalidatePath('/products');
+  revalidatePath('/');
+}
+
+/**
+ * Top10 여부 토글 — 추가 시 현재 최대 순위+1 로 맨 아래에 등록, 제거 시 null.
+ */
+export async function quickToggleProductTop10(formData: FormData) {
+  const { adminUserId } = await requireAdmin();
+
+  const id = Number(formData.get('id'));
+  const add = formData.get('add') === 'true';
+
+  if (!id) throw new Error('상품 ID가 올바르지 않습니다.');
+
+  const supabase = await createClient();
+
+  let newRank: number | null = null;
+
+  if (add) {
+    // 현재 최대 순위 조회
+    const { data: maxData } = await supabase
+      .from('products')
+      .select('top10_rank')
+      .not('top10_rank', 'is', null)
+      .order('top10_rank', { ascending: false })
+      .limit(1)
+      .single();
+
+    newRank = maxData ? (maxData.top10_rank as number) + 1 : 1;
+  }
+
+  const { error } = await supabase
+    .from('products')
+    .update({ top10_rank: newRank })
+    .eq('id', id);
+
+  if (error) throw new Error(`Top10 설정 실패: ${error.message}`);
+
+  await writeAdminActivityLog({
+    adminUserId,
+    action: 'update',
+    entityType: 'product',
+    entityId: String(id),
+    afterData: { top10_rank: newRank },
+    description: `상품 Top10 ${add ? `추가 (순위 ${newRank})` : '제거'}`,
+  });
+
+  revalidatePath('/admin/catalog');
+  revalidatePath('/admin/products');
+  revalidatePath('/admin/products/top10');
+  revalidatePath('/products');
+  revalidatePath('/');
+}
+
+/**
+ * 품절 여부 토글.
+ */
+export async function quickToggleProductSoldOut(formData: FormData) {
+  const { adminUserId } = await requireAdmin();
+
+  const id = Number(formData.get('id'));
+  const nextSoldOut = formData.get('next_sold_out') === 'true';
+
+  if (!id) throw new Error('상품 ID가 올바르지 않습니다.');
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('products')
+    .update({ is_sold_out: nextSoldOut })
+    .eq('id', id);
+
+  if (error) throw new Error(`품절 설정 실패: ${error.message}`);
+
+  await writeAdminActivityLog({
+    adminUserId,
+    action: 'update',
+    entityType: 'product',
+    entityId: String(id),
+    afterData: { is_sold_out: nextSoldOut },
+    description: `상품 품절 ${nextSoldOut ? '처리' : '해제'}`,
+  });
+
+  revalidatePath('/admin/catalog');
+  revalidatePath('/admin/products');
+  revalidatePath('/products');
+  revalidatePath('/');
+}

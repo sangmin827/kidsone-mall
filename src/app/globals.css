@@ -182,3 +182,33 @@ body {
 /* ─── Scrollbar Hide ─────────────────────────────────────── */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Heart "뿅" Pop Animation ───────────────────────────── */
+@keyframes heart-pop {
+  0%   { transform: scale(1); }
+  20%  { transform: scale(1.5) rotate(-10deg); }
+  40%  { transform: scale(0.85) rotate(6deg); }
+  60%  { transform: scale(1.25) rotate(-4deg); }
+  80%  { transform: scale(0.95) rotate(2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.heart-pop {
+  animation: heart-pop 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  display: inline-flex;
+}
+
+/* ─── Heart "뿅" Pop Animation ───────────────────────────── */
+@keyframes heart-pop {
+  0%   { transform: scale(1); }
+  20%  { transform: scale(1.5) rotate(-10deg); }
+  40%  { transform: scale(0.85) rotate(6deg); }
+  60%  { transform: scale(1.25) rotate(-4deg); }
+  80%  { transform: scale(0.95) rotate(2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.heart-pop {
+  animation: heart-pop 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  display: inline-flex;
+}

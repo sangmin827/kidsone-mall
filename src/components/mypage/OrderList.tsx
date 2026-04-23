@@ -14,6 +14,24 @@ import {
 // 반품 왕복 배송비 (변경 시 이 값만 수정)
 const RETURN_SHIPPING_FEE = "왕복 10,000원";
 
+// ── 택배사 설정 ──────────────────────────────────────────────────────────
+const COURIERS: Record<string, { name: string; url: (n: string) => string }> = {
+  cj:      { name: "CJ대한통운",    url: (n) => `https://trace.cjlogistics.com/next/tracking.html?wblNum=${n}` },
+  hanjin:  { name: "한진택배",       url: (n) => `https://www.hanjin.com/kor/CMS/DeliveryMgr/WaybillResult.do?mCode=MN038&schLang=KOR&wblnumText=${n}` },
+  lotte:   { name: "롯데택배",       url: (n) => `https://www.lotteglogis.com/mobile/reservation/tracking/linkView?InvNo=${n}` },
+  epost:   { name: "우체국택배",     url: (n) => `https://service.epost.go.kr/trace.RetrieveDomRigiTraceList.comm?sid1=${n}` },
+  logen:   { name: "로젠택배",       url: (n) => `https://www.ilogen.com/m/personal/trace/${n}` },
+  kdexp:   { name: "경동택배",       url: (n) => `https://kdexp.com/m/service/delivery/delivery.do?barcode=${n}` },
+  cu:      { name: "CU편의점택배",   url: (n) => `https://www.cupost.co.kr/postbox/delivery/localResult.cupost?transNo=${n}` },
+  gs:      { name: "GS25편의점택배", url: (n) => `https://www.cvsnet.co.kr/invoice/tracking.do?invoice_no=${n}` },
+  hyundai: { name: "현대택배",       url: (n) => `https://www.hdexp.co.kr/parcel/goods_search/delivery_search.do?slipNoSearch=${n}` },
+};
+
+function getTrackingUrl(courierCode: string | null, trackingNumber: string | null) {
+  if (!courierCode || !trackingNumber) return null;
+  return COURIERS[courierCode]?.url(trackingNumber) ?? null;
+}
+
 // ── 타입 ──────────────────────────────────────────────────────────────
 type StatusKey = MyOrder["status"];
 type FilterStatus = "all" | StatusKey;
@@ -889,6 +907,38 @@ function OrderModal({
           {/* ──────────── 상세 뷰 ──────────── */}
           {view === "detail" && (
             <div className="space-y-6 px-5 py-5">
+              {/* 배송 추적 */}
+              {order.tracking_number && (
+                <section>
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-sm font-bold text-[#222222]">배송 추적</p>
+                      <span className="rounded-full border border-blue-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-blue-600">
+                        {COURIERS[order.courier_code ?? ""]?.name ?? order.courier_code ?? "택배"}
+                      </span>
+                    </div>
+                    <p className="mb-3 font-mono text-base font-bold tracking-wider text-[#222222]">
+                      {order.tracking_number}
+                    </p>
+                    {getTrackingUrl(order.courier_code, order.tracking_number) ? (
+                      <a
+                        href={getTrackingUrl(order.courier_code, order.tracking_number)!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-600 active:bg-blue-700"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        배송 현황 조회하기
+                      </a>
+                    ) : (
+                      <p className="text-xs text-blue-500">택배사 사이트에서 위 송장번호로 조회하세요.</p>
+                    )}
+                  </div>
+                </section>
+              )}
+
               {/* 취소/반품 요청 상태 표시 */}
               {order.cancel_request && (
                 <section>
@@ -907,6 +957,22 @@ function OrderModal({
                           : "취소 요청이 접수되었습니다."}
                       </p>
                     )}
+                    {order.cancel_request.status === "rejected" && (
+                      <div className="mt-3">
+                        <OrderTimeline status={order.status as StatusKey} />
+                      </div>
+                    )}
+                    {order.cancel_request.status === "rejected" &&
+                      order.cancel_request.customer_notice && (
+                        <div className="mt-3 rounded-xl border border-red-100 bg-red-50 p-3">
+                          <p className="mb-1 text-[10px] font-semibold text-[#FF5555]">
+                            관리자 안내
+                          </p>
+                          <p className="text-xs text-[#991b1b]">
+                            {order.cancel_request.customer_notice}
+                          </p>
+                        </div>
+                      )}
                     {order.cancel_request.reason && (
                       <p className="mt-2 text-xs text-[#9ca3af]">
                         사유: {order.cancel_request.reason}
@@ -936,6 +1002,22 @@ function OrderModal({
                         상품이 수거되었습니다. 검수 완료 후 환불 처리됩니다.
                       </p>
                     )}
+                    {order.return_request.status === "rejected" && (
+                      <div className="mt-3">
+                        <OrderTimeline status={order.status as StatusKey} />
+                      </div>
+                    )}
+                    {order.return_request.status === "rejected" &&
+                      order.return_request.customer_notice && (
+                        <div className="mt-3 rounded-xl border border-red-100 bg-red-50 p-3">
+                          <p className="mb-1 text-[10px] font-semibold text-[#FF5555]">
+                            관리자 안내
+                          </p>
+                          <p className="text-xs text-[#991b1b]">
+                            {order.return_request.customer_notice}
+                          </p>
+                        </div>
+                      )}
                     {order.return_request.reason && (
                       <p className="mt-2 text-xs text-[#9ca3af]">
                         사유: {order.return_request.reason}
@@ -1575,6 +1657,19 @@ function OrderCard({
     order.cancel_request && order.cancel_request.status !== "completed";
   const hasReturnReq = !!order.return_request;
 
+  // 철회 상태(withdraw_requested / withdraw_completed)일 때는
+  // 주문 상태 뱃지도 함께 노출
+  const cancelIsWithdraw =
+    hasCancelReq &&
+    (order.cancel_request!.status === "withdraw_requested" ||
+      order.cancel_request!.status === "withdraw_completed");
+  const returnIsWithdraw =
+    hasReturnReq &&
+    (order.return_request!.status === "withdraw_requested" ||
+      order.return_request!.status === "withdraw_completed");
+  const showOrderBadge =
+    (!hasCancelReq || cancelIsWithdraw) && (!hasReturnReq || returnIsWithdraw);
+
   return (
     <button
       type="button"
@@ -1586,14 +1681,12 @@ function OrderCard({
           {fmtDate(order.created_at)}
         </span>
         <div className="flex items-center gap-1.5">
+          {showOrderBadge && <StatusBadge status={order.status} />}
           {hasCancelReq && (
             <CancelStatusBadge status={order.cancel_request!.status} />
           )}
           {hasReturnReq && (
             <ReturnStatusBadge status={order.return_request!.status} />
-          )}
-          {!hasCancelReq && !hasReturnReq && (
-            <StatusBadge status={order.status} />
           )}
         </div>
       </div>
@@ -1610,6 +1703,22 @@ function OrderCard({
           {order.order_number}
         </p>
       </div>
+      {/* 배송 추적 버튼 (송장번호 있을 때만) */}
+      {order.tracking_number && getTrackingUrl(order.courier_code, order.tracking_number) && (
+        <a
+          href={getTrackingUrl(order.courier_code, order.tracking_number)!}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="mb-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 py-2 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-100"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          {COURIERS[order.courier_code ?? ""]?.name ?? "택배"} 배송 추적
+        </a>
+      )}
+
       <div className="flex items-center justify-between border-t border-[#F3F2EE] pt-3">
         <p className="text-base font-black text-[#222222]">
           {order.total_amount.toLocaleString()}
@@ -1866,9 +1975,9 @@ export default function OrderList({ orders }: Props) {
       )}
 
       {/* ━━━ 주문 카드 목록 ━━━ */}
-      {!isLoading && filtered.length > 0 && (
-        <div className="space-y-2.5">
-          {filtered.map((order) => (
+      {!isLoading && filteredOrders.length > 0 && (
+        <div className="space-y-3">
+          {filteredOrders.map((order) => (
             <OrderCard
               key={order.id}
               order={order}
@@ -1878,7 +1987,7 @@ export default function OrderList({ orders }: Props) {
         </div>
       )}
 
-      {/* ━━━ 모달 ━━━ */}
+      {/* ━━━ 주문 상세 모달 ━━━ */}
       {selectedOrder && (
         <OrderModal
           order={selectedOrder}
