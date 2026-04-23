@@ -34,6 +34,15 @@ function revalidateAll() {
 }
 
 // ── 타입 ────────────────────────────────────────────────────────────────
+type AdminOrderSummary = {
+  order_number: string;
+  orderer_name: string | null;
+  recipient_name: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+};
+
 export type AdminCancelRequest = {
   id: number;
   order_id: number;
@@ -53,14 +62,7 @@ export type AdminCancelRequest = {
   customer_notice: string | null;
   created_at: string;
   updated_at: string;
-  orders: {
-    order_number: string;
-    orderer_name: string | null;
-    recipient_name: string;
-    total_amount: number;
-    status: string;
-    created_at: string;
-  };
+  orders: AdminOrderSummary[];
 };
 
 export type AdminReturnRequest = {
@@ -80,14 +82,7 @@ export type AdminReturnRequest = {
   customer_notice: string | null;
   created_at: string;
   updated_at: string;
-  orders: {
-    order_number: string;
-    orderer_name: string | null;
-    recipient_name: string;
-    total_amount: number;
-    status: string;
-    created_at: string;
-  };
+  orders: AdminOrderSummary[];
 };
 
 // ── 조회 ────────────────────────────────────────────────────────────────
@@ -105,7 +100,54 @@ const RETURN_SELECT = `
 `;
 
 export type CancelReturnFilter = {
-  tab?: "all" | "cancel_req" | "cancel_withdraw" | "return_req" | "return_withdraw";
+  tab?:
+    | "all"
+    | "cancel_req"
+    | "cancel_withdraw"
+    | "return_req"
+    | "return_withdraw";
+};
+
+type AdminCancelRequestRow = {
+  id: number;
+  order_id: number;
+  user_id: string | null;
+  type: "full" | "partial";
+  status:
+    | "requested"
+    | "completed"
+    | "rejected"
+    | "withdraw_requested"
+    | "withdraw_completed";
+  reason: string | null;
+  refund_bank: string | null;
+  refund_account_number: string | null;
+  refund_account_name: string | null;
+  admin_memo: string | null;
+  customer_notice: string | null;
+  created_at: string;
+  updated_at: string;
+  orders: AdminOrderSummary[] | null;
+};
+
+type AdminReturnRequestRow = {
+  id: number;
+  order_id: number;
+  user_id: string | null;
+  type: "full" | "partial";
+  status:
+    | "requested"
+    | "picked_up"
+    | "completed"
+    | "rejected"
+    | "withdraw_requested"
+    | "withdraw_completed";
+  reason: string | null;
+  admin_memo: string | null;
+  customer_notice: string | null;
+  created_at: string;
+  updated_at: string;
+  orders: AdminOrderSummary[] | null;
 };
 
 export async function getAdminCancelRequests(): Promise<AdminCancelRequest[]> {
@@ -115,8 +157,25 @@ export async function getAdminCancelRequests(): Promise<AdminCancelRequest[]> {
     .select(CANCEL_SELECT)
     .not("status", "in", '("completed","withdraw_completed")')
     .order("created_at", { ascending: false });
+
   if (error) throw new Error(`취소 요청 조회 실패: ${error.message}`);
-  return (data ?? []) as AdminCancelRequest[];
+
+  return ((data ?? []) as AdminCancelRequestRow[]).map((item) => ({
+    id: item.id,
+    order_id: item.order_id,
+    user_id: item.user_id,
+    type: item.type,
+    status: item.status,
+    reason: item.reason,
+    refund_bank: item.refund_bank,
+    refund_account_number: item.refund_account_number,
+    refund_account_name: item.refund_account_name,
+    admin_memo: item.admin_memo,
+    customer_notice: item.customer_notice,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    orders: item.orders ?? [],
+  }));
 }
 
 export async function getAdminReturnRequests(): Promise<AdminReturnRequest[]> {
@@ -126,8 +185,22 @@ export async function getAdminReturnRequests(): Promise<AdminReturnRequest[]> {
     .select(RETURN_SELECT)
     .not("status", "in", '("completed","withdraw_completed")')
     .order("created_at", { ascending: false });
+
   if (error) throw new Error(`반품 요청 조회 실패: ${error.message}`);
-  return (data ?? []) as AdminReturnRequest[];
+
+  return ((data ?? []) as AdminReturnRequestRow[]).map((item) => ({
+    id: item.id,
+    order_id: item.order_id,
+    user_id: item.user_id,
+    type: item.type,
+    status: item.status,
+    reason: item.reason,
+    admin_memo: item.admin_memo,
+    customer_notice: item.customer_notice,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    orders: item.orders ?? [],
+  }));
 }
 
 // ── 취소 요청 승인 ────────────────────────────────────────────────────
@@ -209,7 +282,8 @@ export async function approveCancelWithdraw(
     .single();
 
   if (!req) throw new Error("취소 요청을 찾을 수 없습니다.");
-  if (req.status !== "withdraw_requested") throw new Error("처리할 수 없는 상태입니다.");
+  if (req.status !== "withdraw_requested")
+    throw new Error("처리할 수 없는 상태입니다.");
 
   await supabase
     .from("cancel_requests")
@@ -238,7 +312,8 @@ export async function rejectCancelWithdraw(
     .single();
 
   if (!req) throw new Error("취소 요청을 찾을 수 없습니다.");
-  if (req.status !== "withdraw_requested") throw new Error("처리할 수 없는 상태입니다.");
+  if (req.status !== "withdraw_requested")
+    throw new Error("처리할 수 없는 상태입니다.");
 
   // 철회 거절 → 원래 취소요청 상태로 복귀
   await supabase
@@ -326,7 +401,8 @@ export async function approveReturnWithdraw(
     .single();
 
   if (!req) throw new Error("반품 요청을 찾을 수 없습니다.");
-  if (req.status !== "withdraw_requested") throw new Error("처리할 수 없는 상태입니다.");
+  if (req.status !== "withdraw_requested")
+    throw new Error("처리할 수 없는 상태입니다.");
 
   await supabase
     .from("return_requests")
@@ -355,7 +431,8 @@ export async function rejectReturnWithdraw(
     .single();
 
   if (!req) throw new Error("반품 요청을 찾을 수 없습니다.");
-  if (req.status !== "withdraw_requested") throw new Error("처리할 수 없는 상태입니다.");
+  if (req.status !== "withdraw_requested")
+    throw new Error("처리할 수 없는 상태입니다.");
 
   // 철회 거절 → 원래 반품요청 상태로 복귀
   await supabase

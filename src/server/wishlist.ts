@@ -101,11 +101,15 @@ export async function getMyWishlists(): Promise<WishlistProduct[]> {
   return data
     .filter((w) => w.products)
     .map((w) => {
-      const p = w.products as Record<string, unknown>;
+      const product = Array.isArray(w.products) ? w.products[0] : w.products;
       return {
-        ...(p as Omit<WishlistProduct, "wishlisted_at">),
+        ...(product as Omit<WishlistProduct, "wishlisted_at">),
         product_images: (
-          (p.product_images as { image_url: string; is_thumbnail: boolean | null; image_type: string }[]) ?? []
+          (product.product_images as {
+            image_url: string;
+            is_thumbnail: boolean | null;
+            image_type: string;
+          }[]) ?? []
         ).filter((img) => img.image_type === "gallery"),
         wishlisted_at: w.created_at,
       };
@@ -130,9 +134,7 @@ export async function getWishlistProductIds(): Promise<Set<number>> {
 }
 
 // ── 현재 유저의 찜한 상품 ID 집합 (상세 페이지에서 초기값 확인용) ───────
-export async function getWishlistStatus(
-  productId: number,
-): Promise<boolean> {
+export async function getWishlistStatus(productId: number): Promise<boolean> {
   const supabase = await createClient();
   const {
     data: { user },
