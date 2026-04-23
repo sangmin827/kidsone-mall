@@ -16,18 +16,53 @@ const RETURN_SHIPPING_FEE = "왕복 10,000원";
 
 // ── 택배사 설정 ──────────────────────────────────────────────────────────
 const COURIERS: Record<string, { name: string; url: (n: string) => string }> = {
-  cj:      { name: "CJ대한통운",    url: (n) => `https://trace.cjlogistics.com/next/tracking.html?wblNum=${n}` },
-  hanjin:  { name: "한진택배",       url: (n) => `https://www.hanjin.com/kor/CMS/DeliveryMgr/WaybillResult.do?mCode=MN038&schLang=KOR&wblnumText=${n}` },
-  lotte:   { name: "롯데택배",       url: (n) => `https://www.lotteglogis.com/mobile/reservation/tracking/linkView?InvNo=${n}` },
-  epost:   { name: "우체국택배",     url: (n) => `https://service.epost.go.kr/trace.RetrieveDomRigiTraceList.comm?sid1=${n}` },
-  logen:   { name: "로젠택배",       url: (n) => `https://www.ilogen.com/m/personal/trace/${n}` },
-  kdexp:   { name: "경동택배",       url: (n) => `https://kdexp.com/m/service/delivery/delivery.do?barcode=${n}` },
-  cu:      { name: "CU편의점택배",   url: (n) => `https://www.cupost.co.kr/postbox/delivery/localResult.cupost?transNo=${n}` },
-  gs:      { name: "GS25편의점택배", url: (n) => `https://www.cvsnet.co.kr/invoice/tracking.do?invoice_no=${n}` },
-  hyundai: { name: "현대택배",       url: (n) => `https://www.hdexp.co.kr/parcel/goods_search/delivery_search.do?slipNoSearch=${n}` },
+  cj: {
+    name: "CJ대한통운",
+    url: (n) => `https://trace.cjlogistics.com/next/tracking.html?wblNum=${n}`,
+  },
+  hanjin: {
+    name: "한진택배",
+    url: (n) =>
+      `https://www.hanjin.com/kor/CMS/DeliveryMgr/WaybillResult.do?mCode=MN038&schLang=KOR&wblnumText=${n}`,
+  },
+  lotte: {
+    name: "롯데택배",
+    url: (n) =>
+      `https://www.lotteglogis.com/mobile/reservation/tracking/linkView?InvNo=${n}`,
+  },
+  epost: {
+    name: "우체국택배",
+    url: (n) =>
+      `https://service.epost.go.kr/trace.RetrieveDomRigiTraceList.comm?sid1=${n}`,
+  },
+  logen: {
+    name: "로젠택배",
+    url: (n) => `https://www.ilogen.com/m/personal/trace/${n}`,
+  },
+  kdexp: {
+    name: "경동택배",
+    url: (n) => `https://kdexp.com/m/service/delivery/delivery.do?barcode=${n}`,
+  },
+  cu: {
+    name: "CU편의점택배",
+    url: (n) =>
+      `https://www.cupost.co.kr/postbox/delivery/localResult.cupost?transNo=${n}`,
+  },
+  gs: {
+    name: "GS25편의점택배",
+    url: (n) => `https://www.cvsnet.co.kr/invoice/tracking.do?invoice_no=${n}`,
+  },
+  hyundai: {
+    name: "현대택배",
+    url: (n) =>
+      `https://www.hdexp.co.kr/parcel/goods_search/delivery_search.do?slipNoSearch=${n}`,
+  },
 };
 
-function getTrackingUrl(courierCode: string | null, trackingNumber: string | null) {
+function getTrackingUrl(
+  courierCode: string | null,
+  trackingNumber: string | null,
+) {
   if (!courierCode || !trackingNumber) return null;
   return COURIERS[courierCode]?.url(trackingNumber) ?? null;
 }
@@ -36,7 +71,12 @@ function getTrackingUrl(courierCode: string | null, trackingNumber: string | nul
 type StatusKey = MyOrder["status"];
 type FilterStatus = "all" | StatusKey;
 type DateRange = "all" | "7d" | "30d" | "90d";
-type ModalView = "detail" | "cancel" | "return" | "cancel-withdraw" | "return-withdraw";
+type ModalView =
+  | "detail"
+  | "cancel"
+  | "return"
+  | "cancel-withdraw"
+  | "return-withdraw";
 
 // ── 상태 설정 ──────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<
@@ -648,8 +688,7 @@ function OrderModal({
     order.status === "preparing" &&
     order.cancel_request?.status === "requested";
   // 반품 요청 철회 가능 여부 (반품 접수 상태일 때만)
-  const canWithdrawReturn =
-    order.return_request?.status === "requested";
+  const canWithdrawReturn = order.return_request?.status === "requested";
 
   // 취소 제출
   async function handleCancelSubmit(e: React.FormEvent) {
@@ -761,7 +800,9 @@ function OrderModal({
     startTransition(async () => {
       try {
         await requestCancelWithdrawal(order.cancel_request!.id);
-        setFormSuccess("철회 요청이 접수되었습니다. 관리자 확인 후 처리됩니다.");
+        setFormSuccess(
+          "철회 요청이 접수되었습니다. 관리자 확인 후 처리됩니다.",
+        );
         setTimeout(() => {
           router.refresh();
           onClose();
@@ -781,7 +822,9 @@ function OrderModal({
     startTransition(async () => {
       try {
         await requestReturnWithdrawal(order.return_request!.id);
-        setFormSuccess("철회 요청이 접수되었습니다. 관리자 확인 후 처리됩니다.");
+        setFormSuccess(
+          "철회 요청이 접수되었습니다. 관리자 확인 후 처리됩니다.",
+        );
         setTimeout(() => {
           router.refresh();
           onClose();
@@ -912,28 +955,52 @@ function OrderModal({
                 <section>
                   <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
                     <div className="mb-2 flex items-center justify-between">
-                      <p className="text-sm font-bold text-[#222222]">배송 추적</p>
+                      <p className="text-sm font-bold text-[#222222]">
+                        배송 추적
+                      </p>
                       <span className="rounded-full border border-blue-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-blue-600">
-                        {COURIERS[order.courier_code ?? ""]?.name ?? order.courier_code ?? "택배"}
+                        {COURIERS[order.courier_code ?? ""]?.name ??
+                          order.courier_code ??
+                          "택배"}
                       </span>
                     </div>
                     <p className="mb-3 font-mono text-base font-bold tracking-wider text-[#222222]">
                       {order.tracking_number}
                     </p>
-                    {getTrackingUrl(order.courier_code, order.tracking_number) ? (
+                    {getTrackingUrl(
+                      order.courier_code,
+                      order.tracking_number,
+                    ) ? (
                       <a
-                        href={getTrackingUrl(order.courier_code, order.tracking_number)!}
+                        href={
+                          getTrackingUrl(
+                            order.courier_code,
+                            order.tracking_number,
+                          )!
+                        }
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-600 active:bg-blue-700"
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="11" cy="11" r="8" />
+                          <line x1="21" y1="21" x2="16.65" y2="16.65" />
                         </svg>
                         배송 현황 조회하기
                       </a>
                     ) : (
-                      <p className="text-xs text-blue-500">택배사 사이트에서 위 송장번호로 조회하세요.</p>
+                      <p className="text-xs text-blue-500">
+                        택배사 사이트에서 위 송장번호로 조회하세요.
+                      </p>
                     )}
                   </div>
                 </section>
@@ -1557,8 +1624,8 @@ function OrderModal({
                   ⚠️ 반품 요청을 철회하시겠습니까?
                 </p>
                 <p className="text-xs text-[#92400e] leading-relaxed">
-                  철회 요청은 관리자 확인 후 처리됩니다. 수거 기사가 이미
-                  배차된 경우 철회가 불가할 수 있습니다.
+                  철회 요청은 관리자 확인 후 처리됩니다. 수거 기사가 이미 배차된
+                  경우 철회가 불가할 수 있습니다.
                 </p>
               </div>
 
@@ -1596,48 +1663,51 @@ function OrderModal({
 
         {/* ── 하단 액션 바 (상세 뷰에서만) ── */}
         {view === "detail" &&
-          (canCancel || canReturn || canWithdrawCancel || canWithdrawReturn) && (
-          <div className="flex-none border-t border-[#E8E6E1] bg-white px-5 py-3">
-            <div className="flex flex-wrap gap-2">
-              {canCancel && (
-                <button
-                  type="button"
-                  onClick={() => setView("cancel")}
-                  className="flex-1 rounded-xl border border-[#E8E6E1] py-2.5 text-sm font-semibold text-[#c2410c] hover:border-[#c2410c]/30 hover:bg-orange-50 transition-colors"
-                >
-                  취소 신청
-                </button>
-              )}
-              {canReturn && (
-                <button
-                  type="button"
-                  onClick={() => setView("return")}
-                  className="flex-1 rounded-xl border border-[#E8E6E1] py-2.5 text-sm font-semibold text-[#1d4ed8] hover:border-[#1d4ed8]/30 hover:bg-blue-50 transition-colors"
-                >
-                  반품 신청
-                </button>
-              )}
-              {canWithdrawCancel && (
-                <button
-                  type="button"
-                  onClick={() => setView("cancel-withdraw")}
-                  className="flex-1 rounded-xl border border-[#fef08a] py-2.5 text-sm font-semibold text-[#92400e] hover:bg-[#fefce8] transition-colors"
-                >
-                  취소 요청 철회
-                </button>
-              )}
-              {canWithdrawReturn && (
-                <button
-                  type="button"
-                  onClick={() => setView("return-withdraw")}
-                  className="flex-1 rounded-xl border border-[#fef08a] py-2.5 text-sm font-semibold text-[#92400e] hover:bg-[#fefce8] transition-colors"
-                >
-                  반품 요청 철회
-                </button>
-              )}
+          (canCancel ||
+            canReturn ||
+            canWithdrawCancel ||
+            canWithdrawReturn) && (
+            <div className="flex-none border-t border-[#E8E6E1] bg-white px-5 py-3">
+              <div className="flex flex-wrap gap-2">
+                {canCancel && (
+                  <button
+                    type="button"
+                    onClick={() => setView("cancel")}
+                    className="flex-1 rounded-xl border border-[#E8E6E1] py-2.5 text-sm font-semibold text-[#c2410c] hover:border-[#c2410c]/30 hover:bg-orange-50 transition-colors"
+                  >
+                    취소 신청
+                  </button>
+                )}
+                {canReturn && (
+                  <button
+                    type="button"
+                    onClick={() => setView("return")}
+                    className="flex-1 rounded-xl border border-[#E8E6E1] py-2.5 text-sm font-semibold text-[#1d4ed8] hover:border-[#1d4ed8]/30 hover:bg-blue-50 transition-colors"
+                  >
+                    반품 신청
+                  </button>
+                )}
+                {canWithdrawCancel && (
+                  <button
+                    type="button"
+                    onClick={() => setView("cancel-withdraw")}
+                    className="flex-1 rounded-xl border border-[#fef08a] py-2.5 text-sm font-semibold text-[#92400e] hover:bg-[#fefce8] transition-colors"
+                  >
+                    취소 요청 철회
+                  </button>
+                )}
+                {canWithdrawReturn && (
+                  <button
+                    type="button"
+                    onClick={() => setView("return-withdraw")}
+                    className="flex-1 rounded-xl border border-[#fef08a] py-2.5 text-sm font-semibold text-[#92400e] hover:bg-[#fefce8] transition-colors"
+                  >
+                    반품 요청 철회
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
     </>
   );
@@ -1704,20 +1774,31 @@ function OrderCard({
         </p>
       </div>
       {/* 배송 추적 버튼 (송장번호 있을 때만) */}
-      {order.tracking_number && getTrackingUrl(order.courier_code, order.tracking_number) && (
-        <a
-          href={getTrackingUrl(order.courier_code, order.tracking_number)!}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="mb-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 py-2 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-100"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          {COURIERS[order.courier_code ?? ""]?.name ?? "택배"} 배송 추적
-        </a>
-      )}
+      {order.tracking_number &&
+        getTrackingUrl(order.courier_code, order.tracking_number) && (
+          <a
+            href={getTrackingUrl(order.courier_code, order.tracking_number)!}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="mb-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 py-2 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-100"
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            {COURIERS[order.courier_code ?? ""]?.name ?? "택배"} 배송 추적
+          </a>
+        )}
 
       <div className="flex items-center justify-between border-t border-[#F3F2EE] pt-3">
         <p className="text-base font-black text-[#222222]">
@@ -1975,9 +2056,9 @@ export default function OrderList({ orders }: Props) {
       )}
 
       {/* ━━━ 주문 카드 목록 ━━━ */}
-      {!isLoading && filteredOrders.length > 0 && (
+      {!isLoading && filtered.length > 0 && (
         <div className="space-y-3">
-          {filteredOrders.map((order) => (
+          {filtered.map((order) => (
             <OrderCard
               key={order.id}
               order={order}
