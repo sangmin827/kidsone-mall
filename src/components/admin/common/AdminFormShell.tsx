@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 type Props = {
-  action: (formData: FormData) => Promise<void>;
+  action: (formData: FormData) => Promise<void | { id: number }>;
   successMessage?: string;
   redirectOnSuccess?: string;
   className?: string;

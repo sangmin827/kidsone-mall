@@ -18,7 +18,7 @@ import RichTextEditor from "@/src/components/admin/common/RichTextEditor";
 type Props = {
   defaultValue?: AdminProduct | null;
   categories: AdminCategory[];
-  action: (formData: FormData) => Promise<void>;
+  action: (formData: FormData) => Promise<void | { id: number }>;
   defaultCategoryId?: number | null;
   initialOptionGroups?: ProductOptionGroup[];
 };

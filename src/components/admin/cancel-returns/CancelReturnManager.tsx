@@ -137,6 +137,18 @@ function StatusBadge({
   );
 }
 
+// ── 정보 행 컴포넌트 ─────────────────────────────────────────────────────
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="w-[72px] flex-none text-xs text-[#9ca3af]">{label}</span>
+      <span className="break-all text-xs font-medium text-[#222222]">
+        {value}
+      </span>
+    </div>
+  );
+}
+
 // ── Props ────────────────────────────────────────────────────────────────
 type Props = {
   cancelRequests: AdminCancelRequest[];
@@ -829,7 +841,7 @@ export default function CancelReturnManager({
                         <div className="flex gap-2 pt-1">
                           <button
                             type="button"
-                            onClick={() => setExpandedId(null)}
+                            onClick={() => setActionMode(null)}
                             disabled={isPending}
                             className="flex-1 rounded-xl border border-[#E8E6E1] py-2.5 text-sm font-semibold text-[#6b7280] transition-colors hover:border-[#9ca3af]"
                           >
@@ -841,7 +853,11 @@ export default function CancelReturnManager({
                             disabled={isPending}
                             className="flex-1 rounded-xl bg-[#FF5555] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#e04444] disabled:opacity-60"
                           >
-                            {isPending ? "처리 중..." : actionLabel}
+                            {isPending
+                              ? "처리 중..."
+                              : actionMode === "approve"
+                                ? labels.approve
+                                : labels.reject}
                           </button>
                         </div>
                       </section>
@@ -849,7 +865,9 @@ export default function CancelReturnManager({
 
                     {success && (
                       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-center">
-                        <p className="text-sm font-semibold text-emerald-700">✅ 처리가 완료되었습니다.</p>
+                        <p className="text-sm font-semibold text-emerald-700">
+                          ✅ 처리가 완료되었습니다.
+                        </p>
                       </div>
                     )}
                   </>
