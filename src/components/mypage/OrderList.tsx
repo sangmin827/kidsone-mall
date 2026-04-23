@@ -2056,9 +2056,9 @@ export default function OrderList({ orders }: Props) {
       )}
 
       {/* ━━━ 주문 카드 목록 ━━━ */}
-      {!isLoading && filtered.length > 0 && (
+      {!isLoading && filteredOrders.length > 0 && (
         <div className="space-y-3">
-          {filtered.map((order) => (
+          {filteredOrders.map((order) => (
             <OrderCard
               key={order.id}
               order={order}

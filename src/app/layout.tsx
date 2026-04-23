@@ -387,7 +387,6 @@ export default async function RootLayout({
         <Suspense fallback={null}>
           <LoginModal />
         </Suspense>
-        <SpeedInsights />
       </body>
     </html>
   );

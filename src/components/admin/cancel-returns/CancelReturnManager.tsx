@@ -821,114 +821,55 @@ export default function CancelReturnManager({
                         )}
 
                         {error && (
-                          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-[#FF5555]">
+                          <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs text-[#FF5555]">
                             {error}
                           </div>
                         )}
 
-                        <div className="flex gap-2 pb-1">
+                        <div className="flex gap-2 pt-1">
                           <button
                             type="button"
-                            onClick={() => {
-                              setActionMode(null);
-                              setError("");
-                            }}
-                            className="flex-1 rounded-xl border border-[#E8E6E1] py-2.5 text-sm font-medium text-[#6b7280] hover:bg-[#FAF9F6] transition-colors"
+                            onClick={() => setExpandedId(null)}
+                            disabled={isPending}
+                            className="flex-1 rounded-xl border border-[#E8E6E1] py-2.5 text-sm font-semibold text-[#6b7280] transition-colors hover:border-[#9ca3af]"
                           >
                             취소
                           </button>
                           <button
                             type="button"
-                            disabled={isPending}
                             onClick={handleSubmit}
-                            className={`flex-1 rounded-xl py-2.5 text-sm font-bold text-white disabled:opacity-50 transition-colors ${
-                              actionMode === "approve"
-                                ? "bg-[#5332C9] hover:bg-[#4427b0]"
-                                : "bg-[#FF5555] hover:bg-[#e04040]"
-                            }`}
+                            disabled={isPending}
+                            className="flex-1 rounded-xl bg-[#FF5555] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#e04444] disabled:opacity-60"
                           >
-                            {isPending ? "처리 중..." : "확인"}
+                            {isPending ? "처리 중..." : actionLabel}
                           </button>
                         </div>
                       </section>
                     )}
-                  </>
-                )}
 
-                {/* 성공 메시지 */}
-                {success && (
-                  <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-[#15803d]">
-                    ✅ {success}
-                  </div>
+                    {success && (
+                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-center">
+                        <p className="text-sm font-semibold text-emerald-700">✅ 처리가 완료되었습니다.</p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* ── 메모 삭제 확인 모달 ──────────────────────────────────────────── */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center px-4">
-          <div
-            className="absolute inset-0 bg-black/60"
-            onClick={() => setDeleteConfirm(false)}
-          />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#FF5555"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                <path d="M10 11v6" />
-                <path d="M14 11v6" />
-              </svg>
-            </div>
-            <h3 className="text-base font-bold text-[#222222]">
-              메모를 삭제하시겠습니까?
-            </h3>
-            <p className="mt-1.5 text-sm text-[#6b7280]">
-              관리자 메모와 고객 안내문구가 모두 삭제됩니다. 삭제된 내용은
-              복구할 수 없습니다.
-            </p>
-            <div className="mt-5 flex gap-2">
+            {/* 하단 닫기 버튼 */}
+            <div className="flex-none border-t border-[#E8E6E1] px-5 py-4">
               <button
                 type="button"
-                onClick={() => setDeleteConfirm(false)}
-                className="flex-1 rounded-xl border border-[#E8E6E1] py-2.5 text-sm font-medium text-[#6b7280] hover:bg-[#FAF9F6] transition-colors"
+                onClick={closeModal}
+                className="w-full rounded-xl border border-[#E8E6E1] py-2.5 text-sm font-semibold text-[#6b7280] transition-colors hover:border-[#9ca3af]"
               >
-                취소
-              </button>
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={handleDeleteMemo}
-                className="flex-1 rounded-xl bg-[#FF5555] py-2.5 text-sm font-bold text-white hover:bg-[#e04040] disabled:opacity-50 transition-colors"
-              >
-                {isPending ? "삭제 중..." : "삭제"}
+                닫기
               </button>
             </div>
           </div>
         </div>
       )}
     </>
-  );
-}
-
-// ── 유틸 컴포넌트 ──────────────────────────────────────────────────────
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start gap-2 text-xs">
-      <span className="w-16 flex-none text-[#9ca3af]">{label}</span>
-      <span className="flex-1 font-medium text-[#222222]">{value}</span>
-    </div>
   );
 }

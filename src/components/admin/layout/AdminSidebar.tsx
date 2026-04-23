@@ -72,6 +72,8 @@ const NAV: NavEntry[] = [
       </svg>
     ),
     items: [
+      { label: "상품 목록", href: "/admin/products" },
+      { label: "상품 추가", href: "/admin/products/new" },
       { label: "카탈로그 관리", href: "/admin/catalog" },
       { label: "신상품 관리", href: "/admin/products/new-arrivals" },
       { label: "Top 10 관리", href: "/admin/products/top10" },
@@ -356,7 +358,7 @@ export default function AdminSidebar({
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-auto">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
               <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
+                       <line x1="7" y1="17" x2="17" y2="7"/>
             </svg>
           </a>
         )}

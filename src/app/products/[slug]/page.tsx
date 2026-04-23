@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import { createClient } from "@/src/lib/supabase/server";
 import ProductPurchaseBox from "@/src/components/product/ProductPurchaseBox";
 import SoldOutBox from "@/src/components/product/SoldOutBox";
 import ProductImageGallery from "@/src/components/product/ProductImageGallery";
+import ProductDetailTabs from "@/src/components/product/ProductDetailTabs";
 import WishlistButton from "@/src/components/product/WishlistButton";
 import { getMyCart } from "@/src/server/cart";
 import { getWishlistStatus } from "@/src/server/wishlist";
@@ -25,6 +25,8 @@ type Product = {
   stock: number | null;
   is_sold_out: boolean | null;
   hide_when_sold_out: boolean | null;
+  is_new: boolean | null;
+  top10_rank: number | null;
   product_images: ProductImage[] | null;
 };
 
@@ -33,7 +35,7 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
   const { data, error } = await supabase
     .from("products")
     .select(
-      `id, name, slug, price, short_description, description, stock, is_sold_out, hide_when_sold_out,
+      `id, name, slug, price, short_description, description, stock, is_sold_out, hide_when_sold_out, is_new, top10_rank,
        product_images(image_url, is_thumbnail, sort_order, image_type)`,
     )
     .eq("slug", slug)
@@ -63,14 +65,12 @@ export default async function ProductDetailPage({
   const isLoggedIn = !!authData.user;
   const isSoldOut = !!product.is_sold_out;
 
-  // 갤러리 이미지 / 상세 이미지 분리
   const allImages = product.product_images?.sort(
     (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999),
   ) ?? [];
   const galleryImages = allImages.filter((img) => img.image_type !== "detail");
   const detailImages  = allImages.filter((img) => img.image_type === "detail");
 
-  // 찜 상태 (비로그인이면 false)
   const isWishlisted = isLoggedIn
     ? await getWishlistStatus(product.id)
     : false;
@@ -107,7 +107,20 @@ export default async function ProductDetailPage({
           {/* 상품 정보 */}
           <div className="space-y-5">
             <div className="space-y-3">
-              {isSoldOut && <span className="badge-sold-out">품절</span>}
+              {/* 배지 영역 */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {isSoldOut && <span className="badge-sold-out">품절</span>}
+                {product.is_new && (
+                  <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                    신상품
+                  </span>
+                )}
+                {product.top10_rank !== null && product.top10_rank <= 10 && (
+                  <span className="inline-flex items-center rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-700">
+                    TOP {product.top10_rank}
+                  </span>
+                )}
+              </div>
               <h1 className="text-2xl font-bold leading-snug text-[#222222] sm:text-3xl">
                 {product.name}
               </h1>
@@ -163,41 +176,12 @@ export default async function ProductDetailPage({
           </div>
         </div>
 
-        {/* 텍스트 상품 설명 */}
-        {product.description && (
-          <div className="mt-10 rounded-3xl border border-[#E8E6E1] bg-white p-6 sm:p-8">
-            <h2 className="mb-4 text-lg font-bold text-[#222222]">상품 설명</h2>
-            <div className="divider mb-5" />
-            <p className="whitespace-pre-line text-sm leading-8 text-[#6b7280]">
-              {product.description}
-            </p>
-          </div>
-        )}
-
-        {/* 상세 이미지 — 스마트스토어 스타일 */}
-        {detailImages.length > 0 && (
-          <div className="mt-6 overflow-hidden rounded-3xl border border-[#E8E6E1] bg-white">
-            {(!product.description) && (
-              <div className="border-b border-[#E8E6E1] px-6 py-4 sm:px-8">
-                <h2 className="text-lg font-bold text-[#222222]">상품 상세</h2>
-              </div>
-            )}
-            {detailImages.map((img, i) => (
-              <div key={i} className="relative w-full">
-                <Image
-                  src={img.image_url}
-                  alt={`${product.name} 상세 이미지 ${i + 1}`}
-                  width={1200}
-                  height={0}
-                  style={{ height: "auto", width: "100%" }}
-                  className="block"
-                  sizes="(max-width: 768px) 100vw, 800px"
-                  priority={i === 0}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        {/* 상품 정보 탭 (상품정보 / 배송·반품 안내) */}
+        <ProductDetailTabs
+          description={product.description}
+          detailImages={detailImages}
+          productName={product.name}
+        />
 
         <div className="mt-8">
           <Link href="/products" className="btn-ghost inline-flex gap-2">
