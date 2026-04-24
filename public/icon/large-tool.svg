@@ -1,0 +1,41 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 배경 -->
+  <rect width="120" height="120" rx="28" fill="none"/>
+
+  <!-- 매트 -->
+  <rect x="18" y="72" width="84" height="22" rx="10" fill="#5332C9"/>
+
+  <!-- 평균대 -->
+  <rect x="32" y="48" width="56" height="10" rx="5" fill="#FFB703"/>
+  <rect x="38" y="58" width="6" height="16" rx="3" fill="#8D6E63"/>
+  <rect x="76" y="58" width="6" height="16" rx="3" fill="#8D6E63"/>
+
+  <!-- 터널 놀이기구 -->
+  <path
+    d="M28 72C28 54 42 40 60 40C78 40 92 54 92 72"
+    stroke="#4CAF50"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+
+  <!-- 공 -->
+  <circle cx="92" cy="34" r="10" fill="#FF6B6B"/>
+  <path
+    d="M87 34H97"
+    stroke="white"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+  <path
+    d="M92 29V39"
+    stroke="white"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+
+  <!-- 별 장식 -->
+  <path
+    d="M24 30L26 35H31L27 38L29 43L24 40L19 43L21 38L17 35H22L24 30Z"
+    fill="#FFD166"
+  />
+</svg>

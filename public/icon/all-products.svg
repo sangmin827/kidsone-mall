@@ -1,0 +1,58 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 배경 -->
+  <rect width="120" height="120" rx="28" fill="#none"/>
+
+  <!-- 중앙 패키지 -->
+  <rect x="44" y="44" width="32" height="32" rx="10" fill="#5332C9"/>
+  <rect x="52" y="52" width="16" height="16" rx="4" fill="white"/>
+
+  <!-- 스포츠 -->
+  <circle cx="28" cy="30" r="12" fill="#F97316"/>
+  <path d="M16 30H40" stroke="white" stroke-width="2.5"/>
+  <path d="M28 18C34 24 34 36 28 42" stroke="white" stroke-width="2.5"/>
+
+  <!-- 계절 -->
+  <circle cx="92" cy="30" r="12" fill="#FFB703"/>
+  <circle cx="92" cy="30" r="5" fill="white"/>
+  <path d="M92 14V20" stroke="white" stroke-width="2"/>
+  <path d="M92 40V46" stroke="white" stroke-width="2"/>
+  <path d="M76 30H82" stroke="white" stroke-width="2"/>
+  <path d="M102 30H108" stroke="white" stroke-width="2"/>
+
+  <!-- 소도구 : 튜브(개선 버전) -->
+  <circle cx="30" cy="90" r="16" fill="#FF6B6B"/>
+  <circle cx="30" cy="90" r="8" fill="#FAF9F6"/>
+
+  <!-- 튜브 하이라이트 -->
+  <path
+    d="M21 82C24 79 29 78 34 79"
+    stroke="white"
+    stroke-width="3"
+    stroke-linecap="round"
+    opacity="0.9"
+  />
+
+  <!-- 튜브 스트라이프 -->
+  <path
+    d="M18 98L42 82"
+    stroke="white"
+    stroke-width="3"
+    opacity="0.7"
+  />
+  <path
+    d="M20 102L46 84"
+    stroke="white"
+    stroke-width="3"
+    opacity="0.5"
+  />
+
+  <!-- 대도구 -->
+  <rect x="78" y="78" width="26" height="18" rx="5" fill="#4CAF50"/>
+  <rect x="84" y="70" width="14" height="8" rx="3" fill="#4CAF50"/>
+
+  <!-- 연결선 -->
+  <path d="M40 40L48 48" stroke="#D1D5DB" stroke-width="3" stroke-linecap="round"/>
+  <path d="M72 48L82 40" stroke="#D1D5DB" stroke-width="3" stroke-linecap="round"/>
+  <path d="M40 80L48 72" stroke="#D1D5DB" stroke-width="3" stroke-linecap="round"/>
+  <path d="M72 72L82 80" stroke="#D1D5DB" stroke-width="3" stroke-linecap="round"/>
+</svg>

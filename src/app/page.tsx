@@ -24,14 +24,17 @@ export default async function HomePage() {
     .order("sort_order", { ascending: true })
     .limit(6);
 
-  const catEmojis = ["⚽", "🏀", "🤸", "🎯", "🏋️", "🎪"];
+  const catIcons = [
+    "/icon/large-tool.svg",
+    "/icon/small-tool.svg",
+    "/icon/sports.svg",
+    "/icon/season.svg",
+  ];
   const catColors = [
-    "bg-[#FF5555]",
-    "bg-[#f97316]",
-    "bg-[#D4AF37]",
-    "bg-[#22c55e]",
-    "bg-[#3b82f6]",
-    "bg-[#a855f7]",
+    "bg-[#fdecec]",
+    "bg-[#fdf5ec]",
+    "bg-[#fdfcec]",
+    "bg-[#f1fdec]",
   ];
 
   return (
@@ -51,13 +54,20 @@ export default async function HomePage() {
                 href="/products"
                 className="flex-none flex flex-col items-center gap-1.5 group"
               >
-                <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl bg-[#5332C9] transition-transform duration-150 group-hover:scale-105 group-active:scale-95">
-                  <span className="text-xl md:text-2xl">🏃</span>
+                <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl bg-[#eeecfd] transition-transform duration-150 group-hover:scale-105 group-active:scale-95">
+                  <Image
+                    src="/icon/all-products.svg"
+                    alt="전체상품"
+                    width={34}
+                    height={34}
+                    className="h-8 w-8 md:h-9 md:w-9"
+                  />
                 </div>
                 <span className="text-[11px] md:text-xs font-medium text-[#222222] whitespace-nowrap">
                   전체
                 </span>
               </Link>
+
               {categories.map((cat, i) => (
                 <Link
                   key={cat.id}
@@ -67,15 +77,36 @@ export default async function HomePage() {
                   <div
                     className={`flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl ${catColors[i % catColors.length]} transition-transform duration-150 group-hover:scale-105 group-active:scale-95`}
                   >
-                    <span className="text-xl md:text-2xl">
-                      {catEmojis[i % catEmojis.length]}
-                    </span>
+                    <Image
+                      src={catIcons[i % catIcons.length]}
+                      alt={cat.name}
+                      width={34}
+                      height={34}
+                      className="h-8 w-8 md:h-9 md:w-9"
+                    />
                   </div>
                   <span className="text-[11px] md:text-xs font-medium text-[#222222] whitespace-nowrap">
                     {cat.name}
                   </span>
                 </Link>
               ))}
+              <Link
+                href="/sets"
+                className="flex-none flex flex-col items-center gap-1.5 group"
+              >
+                <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl bg-[#ecf9fd] transition-transform duration-150 group-hover:scale-105 group-active:scale-95">
+                  <Image
+                    src="/icon/set.svg"
+                    alt="세트상품"
+                    width={34}
+                    height={34}
+                    className="h-8 w-8 md:h-9 md:w-9"
+                  />
+                </div>
+                <span className="text-[11px] md:text-xs font-medium text-[#222222] whitespace-nowrap">
+                  세트상품
+                </span>
+              </Link>
             </div>
           </div>
         </section>
@@ -159,7 +190,7 @@ export default async function HomePage() {
               <div className="inline-flex items-center gap-2 rounded-full bg-[#ede9fb] px-4 py-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#5332C9]" />
                 <span className="text-xs font-semibold text-[#5332C9]">
-                  New Collection 2025
+                  New Collection 2026
                 </span>
               </div>
               <h1 className="font-gmarket text-4xl font-bold leading-tight text-[#222222] lg:text-[50px]">
@@ -203,19 +234,6 @@ export default async function HomePage() {
                   인기 Top 10
                 </Link>
               </div>
-              <div className="flex gap-5 pt-1">
-                {[
-                  { icon: "🛡️", label: "안전 인증" },
-                  { icon: "👨‍👩‍👧", label: "전문가 추천" },
-                ].map((b) => (
-                  <div key={b.label} className="flex items-center gap-1.5">
-                    <span>{b.icon}</span>
-                    <span className="text-xs font-medium text-[#6b7280]">
-                      {b.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
             </div>
             <div className="flex-none w-72 lg:w-90">
               <div className="relative overflow-hidden rounded-3xl bg-[#FAF9F6] aspect-square">
@@ -233,12 +251,6 @@ export default async function HomePage() {
                     입고!
                   </p>
                 </div>
-                {/* <div className="absolute -left-3 bottom-10 rounded-2xl bg-white border border-[#E8E6E1] px-4 py-2.5 shadow-lg">
-                  <p className="text-xs font-medium text-[#6b7280]">
-                    누적 판매
-                  </p>
-                  <p className="text-base font-bold text-[#222222]">1,000+</p>
-                </div> */}
               </div>
             </div>
           </div>
@@ -390,33 +402,23 @@ export default async function HomePage() {
         <div className="section-inner">
           <div className="text-center mb-8 md:mb-12">
             <h2 className="text-xl font-bold text-[#222222] font-gmarket md:text-3xl">
-              Kids One Mall이 특별한 이유
+              Kids One Mall에 오신걸 환영합니다!
             </h2>
-            <p className="mt-2 text-xs text-[#6b7280] md:text-sm">
-              아이의 안전과 성장을 먼저 생각합니다
-            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
             {[
               {
-                icon: "🛡️",
-                title: "안전 인증 완료",
-                desc: "KC 인증 등 국내외 안전 기준을 통과한 제품만 판매합니다.",
-                color: "bg-[#ede9fb]",
-                textColor: "text-[#5332C9]",
-              },
-              {
                 icon: "👨‍👩‍👧",
                 title: "전문가 추천",
-                desc: "유아체육 전문가가 직접 검증하고 추천한 도구들로 구성됩니다.",
+                desc: "유아체육 전문가가 직접 사용하고 추천한 도구들로 구성됩니다.",
                 color: "bg-[#fff0f0]",
                 textColor: "text-[#FF5555]",
               },
               {
                 icon: "📦",
                 title: "꼼꼼한 포장",
-                desc: "파손 없이 안전하게 도착할 수 있도록 이중 포장으로 발송합니다.",
+                desc: "파손 없이 안전하게 도착할 수 있도록 꼼꼼히 포장해서 보내드리겠습니다.",
                 color: "bg-[#fef9ec]",
                 textColor: "text-[#D4AF37]",
               },
@@ -432,11 +434,17 @@ export default async function HomePage() {
                 key={feature.title}
                 className="flex flex-col items-center gap-3 rounded-2xl border border-[#E8E6E1] bg-[#FAF9F6] p-5 text-center md:p-6"
               >
-                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${feature.color}`}>
+                <div
+                  className={`flex h-14 w-14 items-center justify-center rounded-2xl ${feature.color}`}
+                >
                   <span className="text-2xl md:text-3xl">{feature.icon}</span>
                 </div>
                 <div>
-                  <p className={`text-sm font-bold md:text-base ${feature.textColor}`}>{feature.title}</p>
+                  <p
+                    className={`text-sm font-bold md:text-base ${feature.textColor}`}
+                  >
+                    {feature.title}
+                  </p>
                   <p className="mt-1.5 text-[11px] leading-5 text-[#6b7280] md:text-xs md:leading-6">
                     {feature.desc}
                   </p>

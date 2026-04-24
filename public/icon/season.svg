@@ -1,0 +1,49 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 배경 -->
+  <rect width="120" height="120" rx="28" fill="none"/>
+
+  <!-- 봄 꽃 -->
+  <circle cx="32" cy="34" r="7" fill="#FF8CC8"/>
+  <circle cx="24" cy="42" r="7" fill="#FF8CC8"/>
+  <circle cx="40" cy="42" r="7" fill="#FF8CC8"/>
+  <circle cx="32" cy="50" r="7" fill="#FF8CC8"/>
+  <circle cx="32" cy="42" r="5" fill="#FFD166"/>
+
+  <!-- 여름 태양 -->
+  <circle cx="88" cy="34" r="10" fill="#FFB703"/>
+  <path d="M88 16V10" stroke="#FFB703" stroke-width="3" stroke-linecap="round"/>
+  <path d="M88 58V52" stroke="#FFB703" stroke-width="3" stroke-linecap="round"/>
+  <path d="M70 34H64" stroke="#FFB703" stroke-width="3" stroke-linecap="round"/>
+  <path d="M112 34H106" stroke="#FFB703" stroke-width="3" stroke-linecap="round"/>
+  <path d="M75 21L71 17" stroke="#FFB703" stroke-width="3" stroke-linecap="round"/>
+  <path d="M101 47L105 51" stroke="#FFB703" stroke-width="3" stroke-linecap="round"/>
+  <path d="M101 21L105 17" stroke="#FFB703" stroke-width="3" stroke-linecap="round"/>
+  <path d="M75 47L71 51" stroke="#FFB703" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 가을 낙엽 -->
+  <path
+    d="M34 84C34 72 46 66 54 72C60 76 60 88 50 92C42 96 34 92 34 84Z"
+    fill="#F97316"
+  />
+  <path
+    d="M48 68C50 74 48 82 42 88"
+    stroke="#8B4513"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+
+  <!-- 겨울 눈송이 -->
+  <circle cx="86" cy="82" r="3" fill="#7DD3FC"/>
+
+  <path d="M86 68V96" stroke="#7DD3FC" stroke-width="3" stroke-linecap="round"/>
+  <path d="M72 82H100" stroke="#7DD3FC" stroke-width="3" stroke-linecap="round"/>
+
+  <path d="M76 72L96 92" stroke="#7DD3FC" stroke-width="3" stroke-linecap="round"/>
+  <path d="M96 72L76 92" stroke="#7DD3FC" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 중앙 반짝임 -->
+  <path
+    d="M60 48L63 57H72L65 62L68 71L60 66L52 71L55 62L48 57H57L60 48Z"
+    fill="#5332C9"
+  />
+</svg>

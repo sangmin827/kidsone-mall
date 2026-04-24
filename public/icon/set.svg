@@ -1,0 +1,59 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- 뒤 박스 -->
+  <rect
+    x="22"
+    y="36"
+    width="42"
+    height="42"
+    rx="10"
+    fill="none"
+    transform="rotate(-8 22 36)"
+  />
+
+  <!-- 앞 박스 -->
+  <rect
+    x="52"
+    y="44"
+    width="46"
+    height="46"
+    rx="12"
+    fill="#5332C9"
+  />
+
+  <!-- 박스 테이프 -->
+  <path
+    d="M75 44V90"
+    stroke="white"
+    stroke-width="4"
+  />
+
+  <path
+    d="M52 67H98"
+    stroke="white"
+    stroke-width="4"
+  />
+
+  <!-- 체크 아이콘 -->
+  <circle
+    cx="34"
+    cy="82"
+    r="12"
+    fill="#4CAF50"
+  />
+
+  <path
+    d="M28 82L33 87L41 77"
+    stroke="white"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- 반짝임 -->
+  <path
+    d="M96 28L98 34H104L99 37L101 43L96 39L91 43L93 37L88 34H94L96 28Z"
+    fill="#FFD166"
+  />
+
+</svg>
