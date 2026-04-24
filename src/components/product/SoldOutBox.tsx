@@ -18,6 +18,15 @@ export default function SoldOutBox({ productId }: Props) {
   const [phone, setPhone] = useState("");
   const [agreed, setAgreed] = useState(false);
 
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  };
+
+  const PHONE_REGEX = /^01[0-9]-\d{3,4}-\d{4}$/;
+
   const reset = () => {
     setName("");
     setPhone("");
@@ -39,6 +48,10 @@ export default function SoldOutBox({ productId }: Props) {
     }
     if (!phone.trim()) {
       toast.error("연락처를 입력해주세요.");
+      return;
+    }
+    if (!PHONE_REGEX.test(phone)) {
+      toast.error("연락처 형식이 올바르지 않습니다. (예: 010-1234-5678)");
       return;
     }
     if (!agreed) {
@@ -115,9 +128,10 @@ export default function SoldOutBox({ productId }: Props) {
                 <input
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(formatPhone(e.target.value))}
                   placeholder="010-1234-5678"
                   required
+                  inputMode="numeric"
                   className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
@@ -178,7 +192,6 @@ export default function SoldOutBox({ productId }: Props) {
                 <button
                   type="button"
                   onClick={handleClose}
-                  disabled={isPending}
                   className="rounded-xl border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
                 >
                   취소

@@ -40,12 +40,11 @@ export default function ProductOptionManager({ productId, initialGroups }: Props
     fd.append("sort_order", String(groups.length));
 
     startTransition(async () => {
-      await createOptionGroup(fd);
-      // Optimistic: append temp group
+      const { id: newId } = await createOptionGroup(fd);
       setGroups((prev) => [
         ...prev,
         {
-          id: Date.now(), // temp id — real page refresh will fix
+          id: newId,
           product_id: productId,
           name: newGroupName.trim(),
           sort_order: prev.length,
@@ -92,15 +91,15 @@ export default function ProductOptionManager({ productId, initialGroups }: Props
 
   // ── 옵션 값 추가 ────────────────────────────────
   const [newValues, setNewValues] = useState<
-    Record<number, { value: string; priceDelta: string; stock: string }>
+    Record<number, { value: string; priceDelta: string; stock: string; isSoldOut: boolean; isHidden: boolean }>
   >({});
 
   const getNewValue = (groupId: number) =>
-    newValues[groupId] ?? { value: "", priceDelta: "0", stock: "0" };
+    newValues[groupId] ?? { value: "", priceDelta: "0", stock: "0", isSoldOut: false, isHidden: false };
 
   const setNewValue = (
     groupId: number,
-    patch: Partial<{ value: string; priceDelta: string; stock: string }>
+    patch: Partial<{ value: string; priceDelta: string; stock: string; isSoldOut: boolean; isHidden: boolean }>
   ) =>
     setNewValues((prev) => ({
       ...prev,
@@ -117,6 +116,8 @@ export default function ProductOptionManager({ productId, initialGroups }: Props
     fd.append("price_delta", nv.priceDelta);
     fd.append("stock", nv.stock);
     fd.append("sort_order", String(groups.find((g) => g.id === groupId)?.option_values.length ?? 0));
+    if (nv.isSoldOut) fd.append("is_sold_out", "on");
+    if (nv.isHidden) fd.append("is_hidden", "on");
 
     startTransition(async () => {
       await createOptionValue(fd);
@@ -133,7 +134,8 @@ export default function ProductOptionManager({ productId, initialGroups }: Props
                     value: nv.value.trim(),
                     price_delta: Number(nv.priceDelta) || 0,
                     stock: Number(nv.stock) || 0,
-                    is_sold_out: false,
+                    is_sold_out: nv.isSoldOut,
+                    is_hidden: nv.isHidden,
                     sort_order: g.option_values.length,
                   },
                 ],
@@ -143,7 +145,7 @@ export default function ProductOptionManager({ productId, initialGroups }: Props
       );
       setNewValues((prev) => ({
         ...prev,
-        [groupId]: { value: "", priceDelta: "0", stock: "0" },
+        [groupId]: { value: "", priceDelta: "0", stock: "0", isSoldOut: false, isHidden: false },
       }));
     });
   };
@@ -155,6 +157,7 @@ export default function ProductOptionManager({ productId, initialGroups }: Props
     priceDelta: "0",
     stock: "0",
     isSoldOut: false,
+    isHidden: false,
   });
 
   const handleUpdateValue = (valueId: number, groupId: number) => {
@@ -165,6 +168,7 @@ export default function ProductOptionManager({ productId, initialGroups }: Props
     fd.append("price_delta", editingValue.priceDelta);
     fd.append("stock", editingValue.stock);
     if (editingValue.isSoldOut) fd.append("is_sold_out", "on");
+    if (editingValue.isHidden) fd.append("is_hidden", "on");
 
     startTransition(async () => {
       await updateOptionValue(fd);
@@ -181,6 +185,7 @@ export default function ProductOptionManager({ productId, initialGroups }: Props
                         price_delta: Number(editingValue.priceDelta) || 0,
                         stock: Number(editingValue.stock) || 0,
                         is_sold_out: editingValue.isSoldOut,
+                        is_hidden: editingValue.isHidden,
                       }
                     : v
                 ),
@@ -269,10 +274,16 @@ export default function ProductOptionManager({ productId, initialGroups }: Props
                         <input type="number" className={inputCls} value={editingValue.stock} onChange={(e) => setEditingValue((p) => ({ ...p, stock: e.target.value }))} />
                       </div>
                     </div>
-                    <label className="flex items-center gap-1.5 text-xs text-gray-600">
-                      <input type="checkbox" checked={editingValue.isSoldOut} onChange={(e) => setEditingValue((p) => ({ ...p, isSoldOut: e.target.checked }))} />
-                      품절 처리
-                    </label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-1.5 text-xs text-gray-600">
+                        <input type="checkbox" checked={editingValue.isSoldOut} onChange={(e) => setEditingValue((p) => ({ ...p, isSoldOut: e.target.checked }))} />
+                        품절 처리
+                      </label>
+                      <label className="flex items-center gap-1.5 text-xs text-gray-600">
+                        <input type="checkbox" checked={editingValue.isHidden} onChange={(e) => setEditingValue((p) => ({ ...p, isHidden: e.target.checked }))} />
+                        숨김 처리
+                      </label>
+                    </div>
                     <div className="flex gap-2">
                       <button type="button" className={btnPrimary} disabled={isPending} onClick={() => handleUpdateValue(ov.id, group.id)}>저장</button>
                       <button type="button" className={btnGhost} onClick={() => setEditingValueId(null)}>취소</button>
@@ -280,7 +291,7 @@ export default function ProductOptionManager({ productId, initialGroups }: Props
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className={`flex-1 text-sm ${ov.is_sold_out ? "text-gray-400 line-through" : "text-gray-800"}`}>
+                    <span className={`flex-1 text-sm ${ov.is_sold_out || ov.is_hidden ? "text-gray-400 line-through" : "text-gray-800"}`}>
                       {ov.value}
                       {ov.price_delta !== 0 && (
                         <span className="ml-1 text-xs text-gray-500">
@@ -288,14 +299,17 @@ export default function ProductOptionManager({ productId, initialGroups }: Props
                         </span>
                       )}
                     </span>
-                    {ov.is_sold_out && <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-600">품절</span>}
+                    <div className="flex gap-1">
+                      {ov.is_sold_out && <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-600">품절</span>}
+                      {ov.is_hidden && <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">숨김</span>}
+                    </div>
                     <span className="text-xs text-gray-400">재고 {ov.stock}</span>
                     <button
                       type="button"
                       className={btnGhost}
                       onClick={() => {
                         setEditingValueId(ov.id);
-                        setEditingValue({ value: ov.value, priceDelta: String(ov.price_delta), stock: String(ov.stock), isSoldOut: ov.is_sold_out });
+                        setEditingValue({ value: ov.value, priceDelta: String(ov.price_delta), stock: String(ov.stock), isSoldOut: ov.is_sold_out, isHidden: ov.is_hidden });
                       }}
                     >
                       수정
@@ -341,6 +355,16 @@ export default function ProductOptionManager({ productId, initialGroups }: Props
                   onChange={(e) => setNewValue(group.id, { stock: e.target.value })}
                 />
               </div>
+            </div>
+            <div className="mb-2 flex gap-4">
+              <label className="flex items-center gap-1.5 text-xs text-gray-600">
+                <input type="checkbox" checked={getNewValue(group.id).isSoldOut} onChange={(e) => setNewValue(group.id, { isSoldOut: e.target.checked })} />
+                품절
+              </label>
+              <label className="flex items-center gap-1.5 text-xs text-gray-600">
+                <input type="checkbox" checked={getNewValue(group.id).isHidden} onChange={(e) => setNewValue(group.id, { isHidden: e.target.checked })} />
+                숨김
+              </label>
             </div>
             <button type="button" className={btnPrimary} disabled={isPending || !getNewValue(group.id).value.trim()} onClick={() => handleAddValue(group.id)}>
               옵션 값 추가

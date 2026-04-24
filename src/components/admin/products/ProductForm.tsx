@@ -25,7 +25,7 @@ type Props = {
 
 // ── 스테이징 타입 ───────────────────────────────────────────────
 type StagedImage = { file: File; previewUrl: string; imageType: "gallery" | "detail" };
-type StagedOptionValue = { id: string; value: string; priceDelta: string; stock: string };
+type StagedOptionValue = { id: string; value: string; priceDelta: string; stock: string; isSoldOut: boolean; isHidden: boolean };
 type StagedOptionGroup = { id: string; name: string; values: StagedOptionValue[] };
 
 // ── 공통 스타일 ─────────────────────────────────────────────────
@@ -74,7 +74,6 @@ function StagedImageUploader({
   onRemove: (idx: number) => void;
 }) {
   const galleryInputRef = useRef<HTMLInputElement>(null);
-  const detailInputRef  = useRef<HTMLInputElement>(null);
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>, type: "gallery" | "detail") => {
     const files = Array.from(e.target.files ?? []);
@@ -83,7 +82,6 @@ function StagedImageUploader({
   };
 
   const gallery = images.filter((i) => i.imageType === "gallery");
-  const detail  = images.filter((i) => i.imageType === "detail");
 
   return (
     <div className="space-y-4">
@@ -128,39 +126,6 @@ function StagedImageUploader({
         )}
       </div>
 
-      {/* 상세 이미지 */}
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-700">상세 이미지 (상품 상세 탭에 표시)</span>
-          <button type="button" className={btnGhost} onClick={() => detailInputRef.current?.click()}>
-            + 상세 이미지 추가
-          </button>
-        </div>
-        <input ref={detailInputRef} type="file" accept="image/*" multiple className="hidden"
-          onChange={(e) => handleFiles(e, "detail")} />
-        {detail.length === 0 ? (
-          <div
-            className="flex h-16 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 text-xs text-gray-400 hover:border-gray-400"
-            onClick={() => detailInputRef.current?.click()}
-          >
-            클릭하여 상세 이미지 추가 (선택)
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {detail.map((img, i) => {
-              const realIdx = images.indexOf(img);
-              return (
-                <div key={i} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img.previewUrl} alt="" className="h-10 w-10 rounded object-cover" />
-                  <span className="flex-1 truncate text-xs text-gray-600">{img.file.name}</span>
-                  <button type="button" className={btnDanger} onClick={() => onRemove(realIdx)}>삭제</button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -175,7 +140,7 @@ function StagedOptionBuilder({
   onChange: (groups: StagedOptionGroup[]) => void;
 }) {
   const [newGroupName, setNewGroupName] = useState("");
-  const [newValues, setNewValues] = useState<Record<string, { value: string; priceDelta: string; stock: string }>>({});
+  const [newValues, setNewValues] = useState<Record<string, { value: string; priceDelta: string; stock: string; isSoldOut: boolean; isHidden: boolean }>>({});
 
   const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -187,18 +152,18 @@ function StagedOptionBuilder({
 
   const removeGroup = (gid: string) => onChange(groups.filter((g) => g.id !== gid));
 
-  const getNV = (gid: string) => newValues[gid] ?? { value: "", priceDelta: "0", stock: "0" };
-  const setNV = (gid: string, patch: Partial<{ value: string; priceDelta: string; stock: string }>) =>
+  const getNV = (gid: string) => newValues[gid] ?? { value: "", priceDelta: "0", stock: "0", isSoldOut: false, isHidden: false };
+  const setNV = (gid: string, patch: Partial<{ value: string; priceDelta: string; stock: string; isSoldOut: boolean; isHidden: boolean }>) =>
     setNewValues((p) => ({ ...p, [gid]: { ...getNV(gid), ...patch } }));
 
   const addValue = (gid: string) => {
     const nv = getNV(gid);
     if (!nv.value.trim()) return;
     onChange(groups.map((g) => g.id === gid
-      ? { ...g, values: [...g.values, { id: uid(), value: nv.value.trim(), priceDelta: nv.priceDelta, stock: nv.stock }] }
+      ? { ...g, values: [...g.values, { id: uid(), value: nv.value.trim(), priceDelta: nv.priceDelta, stock: nv.stock, isSoldOut: nv.isSoldOut, isHidden: nv.isHidden }] }
       : g
     ));
-    setNV(gid, { value: "", priceDelta: "0", stock: "0" });
+    setNV(gid, { value: "", priceDelta: "0", stock: "0", isSoldOut: false, isHidden: false });
   };
 
   const removeValue = (gid: string, vid: string) =>
@@ -229,6 +194,8 @@ function StagedOptionBuilder({
                       ({Number(ov.priceDelta) > 0 ? "+" : ""}{Number(ov.priceDelta).toLocaleString()}원)
                     </span>
                   )}
+                  {ov.isSoldOut && <span className="ml-1 rounded bg-rose-100 px-1 text-[10px] text-rose-600">품절</span>}
+                  {ov.isHidden && <span className="ml-1 rounded bg-gray-200 px-1 text-[10px] text-gray-500">숨김</span>}
                 </span>
                 <span className="text-xs text-gray-400">재고 {ov.stock}</span>
                 <button type="button" className={btnDanger} onClick={() => removeValue(group.id, ov.id)}>삭제</button>
@@ -255,6 +222,18 @@ function StagedOptionBuilder({
                 <input type="number" className={inputSm} placeholder="0"
                   value={getNV(group.id).stock} onChange={(e) => setNV(group.id, { stock: e.target.value })} />
               </div>
+            </div>
+            <div className="mb-2 flex items-center gap-4">
+              <label className="flex items-center gap-1.5 text-xs text-gray-600">
+                <input type="checkbox" checked={getNV(group.id).isSoldOut}
+                  onChange={(e) => setNV(group.id, { isSoldOut: e.target.checked })} />
+                품절 처리
+              </label>
+              <label className="flex items-center gap-1.5 text-xs text-gray-600">
+                <input type="checkbox" checked={getNV(group.id).isHidden}
+                  onChange={(e) => setNV(group.id, { isHidden: e.target.checked })} />
+                숨김 처리
+              </label>
             </div>
             <button type="button" className={btnPrimary}
               disabled={!getNV(group.id).value.trim()} onClick={() => addValue(group.id)}>
@@ -326,7 +305,38 @@ export default function ProductForm({
   const handleCreateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
+
+    // 🔒 안전망: contentEditable에 포커스가 남아있으면 blur 시켜 onBlur→syncHidden 트리거
+    if (document.activeElement instanceof HTMLElement && document.activeElement !== form) {
+      document.activeElement.blur();
+    }
+
     const formData = new FormData(form);
+
+    // 🔒 안전망: description이 비어있다면 contentEditable에서 직접 읽어 주입
+    if (!formData.get("description")) {
+      const editor = form.querySelector<HTMLDivElement>(".rich-editor");
+      const html = editor?.innerHTML ?? "";
+      const clean = html === "<br>" || html === "" ? "" : html;
+      if (clean) formData.set("description", clean);
+    }
+
+    // ── 필수값 검증 ─────────────────────────────────────────
+    const categoryVal = String(formData.get("category_id") ?? "").trim();
+    if (!categoryVal) {
+      toast.error("카테고리를 선택해 주세요.");
+      return;
+    }
+    const priceVal = Number(formData.get("price") ?? 0);
+    if (!priceVal || priceVal < 100) {
+      toast.error("판매 가격은 100원 이상이어야 합니다.");
+      return;
+    }
+    const hasGalleryImage = stagedImages.some((i) => i.imageType === "gallery");
+    if (!hasGalleryImage) {
+      toast.error("상품 이미지를 1장 이상 추가해 주세요.");
+      return;
+    }
 
     startTransition(async () => {
       try {
@@ -355,10 +365,19 @@ export default function ProductForm({
             gFd.append("product_id", String(productId));
             gFd.append("name", grp.name);
             gFd.append("sort_order", String(gi));
-            await createOptionGroup(gFd);
-
-            // group id를 가져와야하므로 skip — 간단하게 재조회 없이 values는 별도 처리 불가
-            // 대신 옵션 값은 등록 후 수정 페이지에서 추가 안내
+            const { id: groupId } = await createOptionGroup(gFd);
+            for (let vi = 0; vi < grp.values.length; vi++) {
+              const val = grp.values[vi];
+              const vFd = new FormData();
+              vFd.append("group_id", String(groupId));
+              vFd.append("value", val.value);
+              vFd.append("price_delta", val.priceDelta);
+              vFd.append("stock", val.stock);
+              vFd.append("sort_order", String(vi));
+              if (val.isSoldOut) vFd.append("is_sold_out", "on");
+              if (val.isHidden) vFd.append("is_hidden", "on");
+              await createOptionValue(vFd);
+            }
           }
         }
 
@@ -444,8 +463,8 @@ function CreateSections({
           <Field label="상품명" required>
             <input type="text" name="name" className={inputBase} placeholder="예: 한국기어 공룡 장난감" required />
           </Field>
-          <Field label="카테고리">
-            <select name="category_id" defaultValue={defaultCategoryId ? String(defaultCategoryId) : ""} className={inputBase}>
+          <Field label="카테고리" required>
+            <select name="category_id" defaultValue={defaultCategoryId ? String(defaultCategoryId) : ""} className={inputBase} required>
               <option value="" disabled>카테고리를 선택해 주세요</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
@@ -469,11 +488,17 @@ function CreateSections({
 
       <Section title="가격 · 재고">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="판매 가격 (원)" required>
-            <input type="number" name="price" defaultValue={0} className={inputBase} min={0} required />
+          <Field label="판매 가격 (원)" required hint="최소 100원 이상 입력해 주세요.">
+            <input type="number" name="price" defaultValue={100} className={inputBase} min={100} step={1} required />
           </Field>
           <Field label="재고 수량" required hint="참고용 수치. 품절 여부는 품절 설정에서 관리합니다.">
-            <input type="number" name="stock" defaultValue={0} className={inputBase} min={0} required />
+            <input type="number" name="stock" defaultValue={1000} className={inputBase} min={0} required />
+          </Field>
+          <Field label="배송비 (원)" hint="0이면 무료배송으로 표시됩니다.">
+            <input type="number" name="shipping_fee" defaultValue={0} className={inputBase} min={0} />
+          </Field>
+          <Field label="배송비 안내 문구" hint="예: 30,000원 이상 무료배송">
+            <input type="text" name="shipping_fee_text" className={inputBase} placeholder="예: 30,000원 이상 무료배송" />
           </Field>
         </div>
       </Section>
@@ -482,8 +507,13 @@ function CreateSections({
         <StagedOptionBuilder groups={stagedOptions} onChange={onChangeOptions} />
       </Section>
 
-      <Section title="상품 이미지" description="갤러리 이미지와 상세 이미지를 지금 바로 추가하세요. 등록 시 자동으로 업로드됩니다.">
+      <Section title="상품 이미지 *" description="갤러리 이미지를 1장 이상 반드시 등록해 주세요. 등록 시 자동으로 업로드됩니다.">
         <StagedImageUploader images={stagedImages} onAdd={onAddImages} onRemove={onRemoveImage} />
+        {stagedImages.filter((i) => i.imageType === "gallery").length === 0 && (
+          <p className="mt-2 text-xs font-medium text-rose-500">
+            * 상품 이미지를 최소 1장 추가해야 등록할 수 있습니다.
+          </p>
+        )}
       </Section>
 
       <Section title="노출 · 배지">
@@ -542,10 +572,10 @@ function EditSections({
           <Field label="상품명" required>
             <input type="text" name="name" defaultValue={defaultValue.name} className={inputBase} required />
           </Field>
-          <Field label="카테고리">
+          <Field label="카테고리" required>
             <select name="category_id"
               defaultValue={defaultValue.category_id != null ? String(defaultValue.category_id) : ""}
-              className={inputBase}>
+              className={inputBase} required>
               <option value="" disabled>카테고리를 선택해 주세요</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
@@ -570,11 +600,17 @@ function EditSections({
 
       <Section title="가격 · 재고">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="판매 가격 (원)" required>
-            <input type="number" name="price" defaultValue={defaultValue.price} className={inputBase} min={0} required />
+          <Field label="판매 가격 (원)" required hint="최소 100원 이상 입력해 주세요.">
+            <input type="number" name="price" defaultValue={defaultValue.price} className={inputBase} min={100} step={1} required />
           </Field>
           <Field label="재고 수량" required hint="참고용 수치.">
             <input type="number" name="stock" defaultValue={defaultValue.stock} className={inputBase} min={0} required />
+          </Field>
+          <Field label="배송비 (원)" hint="0이면 무료배송으로 표시됩니다.">
+            <input type="number" name="shipping_fee" defaultValue={defaultValue.shipping_fee ?? 0} className={inputBase} min={0} />
+          </Field>
+          <Field label="배송비 안내 문구" hint="예: 30,000원 이상 무료배송">
+            <input type="text" name="shipping_fee_text" defaultValue={defaultValue.shipping_fee_text ?? ""} className={inputBase} placeholder="예: 30,000원 이상 무료배송" />
           </Field>
         </div>
       </Section>

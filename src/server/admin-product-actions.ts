@@ -68,6 +68,38 @@ async function clearDuplicateTop10Rank(
   if (error) throw new Error(`기존 Top 10 순위 정리 실패: ${error.message}`);
 }
 
+/**
+ * vacatedRank 순위가 빠졌을 때 그 아래 순위를 1씩 앞당깁니다.
+ * 예) 2위가 삭제되면 3→2, 4→3, 5→4 ...
+ */
+async function shiftTop10RanksUp(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  vacatedRank: number,
+  excludeProductId?: number,
+) {
+  let selectQuery = supabase
+    .from('products')
+    .select('id, top10_rank')
+    .gt('top10_rank', vacatedRank)
+    .not('top10_rank', 'is', null);
+
+  if (excludeProductId !== undefined) {
+    selectQuery = selectQuery.neq('id', excludeProductId);
+  }
+
+  const { data, error } = await selectQuery;
+  if (error) throw new Error(`순위 재정렬 조회 실패: ${error.message}`);
+  if (!data || data.length === 0) return;
+
+  for (const row of data) {
+    const { error: upErr } = await supabase
+      .from('products')
+      .update({ top10_rank: (row.top10_rank as number) - 1 })
+      .eq('id', row.id);
+    if (upErr) throw new Error(`순위 재정렬 실패: ${upErr.message}`);
+  }
+}
+
 export async function createProduct(formData: FormData): Promise<{ id: number }> {
   const { adminUserId } = await requireAdmin();
 
@@ -83,8 +115,12 @@ export async function createProduct(formData: FormData): Promise<{ id: number }>
   const top10Rank = parseTop10Rank(formData.get('top10_rank'));
   const isSoldOut = formData.get('is_sold_out') === 'on';
   const hideWhenSoldOut = formData.get('hide_when_sold_out') === 'on';
+  const shippingFee = Number(formData.get('shipping_fee') ?? 0);
+  const shippingFeeText = parseNullableText(formData.get('shipping_fee_text'));
 
   if (!name) throw new Error('상품명을 입력해주세요.');
+  if (categoryId === null) throw new Error('카테고리를 선택해 주세요.');
+  if (Number.isNaN(price) || price < 100) throw new Error('판매 가격은 100원 이상이어야 합니다.');
 
   const slug = nameToSlug(name);
   if (!slug) throw new Error('슬러그를 생성할 수 없습니다. 상품명을 확인해주세요.');
@@ -103,6 +139,8 @@ export async function createProduct(formData: FormData): Promise<{ id: number }>
     is_active: isActive,
     is_new: isNew,
     is_set: isSet,
+    shipping_fee: Number.isNaN(shippingFee) ? 0 : shippingFee,
+    shipping_fee_text: shippingFeeText,
     top10_rank: top10Rank,
     is_sold_out: isSoldOut,
     hide_when_sold_out: hideWhenSoldOut,
@@ -149,14 +187,24 @@ export async function updateProduct(formData: FormData) {
   const top10Rank = parseTop10Rank(formData.get('top10_rank'));
   const isSoldOut = formData.get('is_sold_out') === 'on';
   const hideWhenSoldOut = formData.get('hide_when_sold_out') === 'on';
+  const shippingFee = Number(formData.get('shipping_fee') ?? 0);
+  const shippingFeeText = parseNullableText(formData.get('shipping_fee_text'));
 
   if (!id) throw new Error('상품 ID가 올바르지 않습니다.');
   if (!name) throw new Error('상품명을 입력해주세요.');
+  if (categoryId === null) throw new Error('카테고리를 선택해 주세요.');
+  if (Number.isNaN(price) || price < 100) throw new Error('판매 가격은 100원 이상이어야 합니다.');
 
   const supabase = await createClient();
   const beforeSnapshot = await getAdminProductById(id);
+  const oldRank = beforeSnapshot?.top10_rank ?? null;
 
   if (top10Rank !== null) await clearDuplicateTop10Rank(supabase, top10Rank, id);
+
+  // 이전 순위가 존재하고 새 순위와 다를 때(순위 변경·해제) → 빈 자리 채우기
+  if (oldRank !== null && oldRank !== top10Rank) {
+    await shiftTop10RanksUp(supabase, oldRank, id);
+  }
 
   const newSlug = nameToSlug(name);
   const slug = newSlug || (beforeSnapshot?.slug ?? '');
@@ -171,6 +219,8 @@ export async function updateProduct(formData: FormData) {
     is_active: isActive,
     is_new: isNew,
     is_set: isSet,
+    shipping_fee: Number.isNaN(shippingFee) ? 0 : shippingFee,
+    shipping_fee_text: shippingFeeText,
     top10_rank: top10Rank,
     is_sold_out: isSoldOut,
     hide_when_sold_out: hideWhenSoldOut,
@@ -203,6 +253,8 @@ export async function deleteProduct(formData: FormData) {
 
   const supabase = await createClient();
   const beforeSnapshot = await getAdminProductById(id);
+  const deletedRank = beforeSnapshot?.top10_rank ?? null;
+
   const { error } = await supabase.from('products').delete().eq('id', id);
 
   if (error) {
@@ -212,6 +264,11 @@ export async function deleteProduct(formData: FormData) {
       /order_items/i.test(error.message);
     if (isFkViolation) throw new Error('이미 주문된 상품이라 완전 삭제할 수 없습니다. 대신 상품 수정에서 "판매중으로 표시" 체크를 해제하면 쇼핑몰에서 숨겨집니다.');
     throw new Error(`상품 삭제 실패: ${error.message}`);
+  }
+
+  // 삭제된 상품에 순위가 있었다면 그 아래 순위를 앞당김
+  if (deletedRank !== null) {
+    await shiftTop10RanksUp(supabase, deletedRank);
   }
 
   await writeAdminActivityLog({

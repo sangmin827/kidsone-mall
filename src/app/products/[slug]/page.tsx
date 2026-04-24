@@ -7,6 +7,7 @@ import ProductDetailTabs from "@/src/components/product/ProductDetailTabs";
 import WishlistButton from "@/src/components/product/WishlistButton";
 import { getMyCart } from "@/src/server/cart";
 import { getWishlistStatus } from "@/src/server/wishlist";
+import { getPublicProductOptions } from "@/src/server/product-options";
 import Link from "next/link";
 
 type ProductImage = {
@@ -27,6 +28,8 @@ type Product = {
   hide_when_sold_out: boolean | null;
   is_new: boolean | null;
   top10_rank: number | null;
+  shipping_fee: number | null;
+  shipping_fee_text: string | null;
   product_images: ProductImage[] | null;
 };
 
@@ -35,7 +38,7 @@ async function getProductBySlug(slug: string): Promise<Product | null> {
   const { data, error } = await supabase
     .from("products")
     .select(
-      `id, name, slug, price, short_description, description, stock, is_sold_out, hide_when_sold_out, is_new, top10_rank,
+      `id, name, slug, price, short_description, description, stock, is_sold_out, hide_when_sold_out, is_new, top10_rank, shipping_fee, shipping_fee_text,
        product_images(image_url, is_thumbnail, sort_order, image_type)`,
     )
     .eq("slug", slug)
@@ -69,11 +72,11 @@ export default async function ProductDetailPage({
     (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999),
   ) ?? [];
   const galleryImages = allImages.filter((img) => img.image_type !== "detail");
-  const detailImages  = allImages.filter((img) => img.image_type === "detail");
 
-  const isWishlisted = isLoggedIn
-    ? await getWishlistStatus(product.id)
-    : false;
+  const [isWishlisted, optionGroups] = await Promise.all([
+    isLoggedIn ? getWishlistStatus(product.id) : Promise.resolve(false),
+    getPublicProductOptions(product.id),
+  ]);
 
   return (
     <main className="min-h-screen bg-[#FAF9F6]">
@@ -150,6 +153,9 @@ export default async function ProductDetailPage({
                   stock={product.stock ?? 0}
                   cartItemCount={cartItemCount}
                   isLoggedIn={isLoggedIn}
+                  shippingFee={product.shipping_fee ?? 0}
+                  shippingFeeText={product.shipping_fee_text}
+                  optionGroups={optionGroups}
                 />
               )}
             </div>
@@ -179,8 +185,6 @@ export default async function ProductDetailPage({
         {/* 상품 정보 탭 (상품정보 / 배송·반품 안내) */}
         <ProductDetailTabs
           description={product.description}
-          detailImages={detailImages}
-          productName={product.name}
         />
 
         <div className="mt-8">

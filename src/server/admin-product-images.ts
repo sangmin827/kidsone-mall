@@ -6,7 +6,7 @@ import { writeAdminActivityLog } from '@/src/server/admin-activity-logs';
 
 const BUCKET = 'product-images';
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
-const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10MB (클라이언트 하드 리밋과 일치)
 
 function randomId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -51,7 +51,7 @@ export async function uploadProductImage(formData: FormData) {
   }
 
   if (file.size > MAX_SIZE_BYTES) {
-    throw new Error('이미지 용량은 5MB 이하여야 합니다.');
+    throw new Error('이미지 용량은 10MB 이하여야 합니다.');
   }
 
   // Storage 경로: products/{productId}/{timestamp-random}.{ext}

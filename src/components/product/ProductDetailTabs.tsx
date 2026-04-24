@@ -1,18 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-
-type ProductImage = {
-  image_url: string;
-  sort_order: number | null;
-  image_type: string;
-};
 
 type Props = {
   description: string | null;
-  detailImages: ProductImage[];
-  productName: string;
 };
 
 const tabs = [
@@ -35,7 +26,7 @@ function plainToHtml(text: string): string {
     .join("");
 }
 
-export default function ProductDetailTabs({ description, detailImages, productName }: Props) {
+export default function ProductDetailTabs({ description }: Props) {
   const [active, setActive] = useState<TabKey>("info");
 
   // HTML이든 plain text든 항상 dangerouslySetInnerHTML로 렌더링
@@ -72,34 +63,14 @@ export default function ProductDetailTabs({ description, detailImages, productNa
           {descriptionHtml && (
             <div className="px-6 py-6 sm:px-8 sm:py-8">
               <div
-                className="text-sm leading-7 text-[#444] [&_a]:text-[#5332C9] [&_a]:underline [&_b]:font-bold [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-[#222] [&_h2]:mb-1.5 [&_h2]:mt-3 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-[#222] [&_h3]:mb-1 [&_h3]:mt-2.5 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-[#222] [&_iframe]:my-3 [&_iframe]:w-full [&_iframe]:rounded-xl [&_img]:my-2 [&_img]:max-w-full [&_img]:rounded-lg [&_li]:ml-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-1 [&_strong]:font-bold [&_ul]:list-disc [&_ul]:pl-5"
+                className="text-center text-sm leading-7 text-[#444] [&_a]:text-[#5332C9] [&_a]:underline [&_b]:font-bold [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-[#222] [&_h2]:mb-1.5 [&_h2]:mt-3 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-[#222] [&_h3]:mb-1 [&_h3]:mt-2.5 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-[#222] [&_iframe]:my-3 [&_iframe]:w-full [&_iframe]:rounded-xl [&_img]:my-2 [&_img]:max-w-full [&_img]:rounded-lg [&_li]:ml-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-1 [&_strong]:font-bold [&_ul]:list-disc [&_ul]:pl-5"
                 dangerouslySetInnerHTML={{ __html: descriptionHtml }}
               />
             </div>
           )}
 
-          {/* 상세 이미지 */}
-          {detailImages.length > 0 && (
-            <div className={descriptionHtml ? "border-t border-[#E8E6E1]" : ""}>
-              {detailImages.map((img, i) => (
-                <div key={i} className="relative w-full">
-                  <Image
-                    src={img.image_url}
-                    alt={`${productName} 상세 이미지 ${i + 1}`}
-                    width={1200}
-                    height={0}
-                    style={{ height: "auto", width: "100%" }}
-                    className="block"
-                    sizes="(max-width: 768px) 100vw, 800px"
-                    priority={i === 0}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* 내용 없을 때 */}
-          {!descriptionHtml && detailImages.length === 0 && (
+          {!descriptionHtml && (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
               <span className="text-3xl">📋</span>
               <p className="text-sm text-[#9ca3af]">등록된 상품 정보가 없습니다.</p>

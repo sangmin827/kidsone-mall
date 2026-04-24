@@ -7,7 +7,7 @@ import { requireAdmin } from '@/src/server/admin-auth';
 export type ProductOptionGroup = {
   id: number;
   product_id: number;
-  name: string;        // e.g. "색상", "사이즈"
+  name: string;
   sort_order: number;
   option_values: ProductOptionValue[];
 };
@@ -15,10 +15,11 @@ export type ProductOptionGroup = {
 export type ProductOptionValue = {
   id: number;
   group_id: number;
-  value: string;       // e.g. "레드", "L"
-  price_delta: number; // 0 = 기본 가격
+  value: string;
+  price_delta: number;
   stock: number;
   is_sold_out: boolean;
+  is_hidden: boolean;
   sort_order: number;
 };
 
@@ -41,12 +42,11 @@ export async function getProductOptionGroups(
   if (error) throw new Error(`옵션 그룹 조회 실패: ${error.message}`);
 
   const groupIds = (groups ?? []).map((g) => g.id);
-
   if (groupIds.length === 0) return [];
 
   const { data: values, error: vError } = await supabase
     .from('product_option_values')
-    .select('id, group_id, value, price_delta, stock, is_sold_out, sort_order')
+    .select('id, group_id, value, price_delta, stock, is_sold_out, is_hidden, sort_order')
     .in('group_id', groupIds)
     .order('sort_order', { ascending: true });
 
@@ -62,7 +62,7 @@ export async function getProductOptionGroups(
 //  OPTION GROUP CRUD
 // ──────────────────────────────────────────────────────────────
 
-export async function createOptionGroup(formData: FormData) {
+export async function createOptionGroup(formData: FormData): Promise<{ id: number }> {
   await requireAdmin();
   const supabase = await createClient();
 
@@ -72,13 +72,16 @@ export async function createOptionGroup(formData: FormData) {
 
   if (!productId || !name) throw new Error('필수 값이 누락되었습니다.');
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('product_option_groups')
-    .insert({ product_id: productId, name, sort_order: sortOrder });
+    .insert({ product_id: productId, name, sort_order: sortOrder })
+    .select('id')
+    .single();
 
   if (error) throw new Error(`옵션 그룹 등록 실패: ${error.message}`);
 
   revalidatePath(`/admin/products/${productId}`);
+  return { id: data.id };
 }
 
 export async function updateOptionGroup(formData: FormData) {
@@ -134,6 +137,8 @@ export async function createOptionValue(formData: FormData) {
   const priceDelta = Number(formData.get('price_delta') ?? 0);
   const stock = Number(formData.get('stock') ?? 0);
   const sortOrder = Number(formData.get('sort_order') ?? 0);
+  const isSoldOut = formData.get('is_sold_out') === 'on';
+  const isHidden = formData.get('is_hidden') === 'on';
 
   if (!groupId || !value) throw new Error('필수 값이 누락되었습니다.');
 
@@ -144,7 +149,8 @@ export async function createOptionValue(formData: FormData) {
       value,
       price_delta: Number.isNaN(priceDelta) ? 0 : priceDelta,
       stock: Number.isNaN(stock) ? 0 : stock,
-      is_sold_out: false,
+      is_sold_out: isSoldOut,
+      is_hidden: isHidden,
       sort_order: sortOrder,
     });
 
@@ -163,6 +169,7 @@ export async function updateOptionValue(formData: FormData) {
   const priceDelta = Number(formData.get('price_delta') ?? 0);
   const stock = Number(formData.get('stock') ?? 0);
   const isSoldOut = formData.get('is_sold_out') === 'on';
+  const isHidden = formData.get('is_hidden') === 'on';
 
   if (!id) throw new Error('ID가 누락되었습니다.');
 
@@ -173,6 +180,7 @@ export async function updateOptionValue(formData: FormData) {
       price_delta: Number.isNaN(priceDelta) ? 0 : priceDelta,
       stock: Number.isNaN(stock) ? 0 : stock,
       is_sold_out: isSoldOut,
+      is_hidden: isHidden,
     })
     .eq('id', id);
 

@@ -16,6 +16,8 @@ export type AdminProduct = {
   slug: string;
   price: number;
   stock: number;
+  shipping_fee: number;
+  shipping_fee_text: string | null;
   short_description: string | null;
   description: string | null;
   category_id: number | null;
@@ -30,7 +32,7 @@ export type AdminProduct = {
 };
 
 const PRODUCT_COLUMNS =
-  'id, name, slug, price, stock, short_description, description, category_id, is_active, is_new, is_set, top10_rank, is_sold_out, hide_when_sold_out, created_at';
+  'id, name, slug, price, stock, shipping_fee, shipping_fee_text, short_description, description, category_id, is_active, is_new, is_set, top10_rank, is_sold_out, hide_when_sold_out, created_at';
 
 const PRODUCT_IMAGE_COLUMNS =
   'id, product_id, image_url, is_thumbnail, sort_order, storage_path, image_type';

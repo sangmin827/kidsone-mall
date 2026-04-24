@@ -17,7 +17,7 @@ export type PurchaseRequest = {
   created_at: string;
 };
 
-const PHONE_REGEX = /^[0-9-+()\s]{8,20}$/;
+const PHONE_REGEX = /^01[0-9]-\d{3,4}-\d{4}$/;
 
 /**
  * 고객(비회원도 가능)이 품절 상품에 대해 재입고 시 안내를 받기 위해
@@ -55,6 +55,18 @@ export async function submitPurchaseRequest(formData: FormData): Promise<{
   }
 
   const supabase = await createClient();
+
+  // 중복 신청 방지 — 동일 연락처 + 동일 상품은 1회만 허용
+  const { data: existing } = await supabase
+    .from("purchase_requests")
+    .select("id")
+    .eq("product_id", productId)
+    .eq("customer_phone", customerPhone)
+    .maybeSingle();
+
+  if (existing) {
+    return { ok: false, message: "이미 신청했습니다." };
+  }
 
   // 상품명 스냅샷 — 나중에 상품이 삭제돼도 관리자가 어떤 상품이었는지 알 수 있도록
   const { data: product } = await supabase

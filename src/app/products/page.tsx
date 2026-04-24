@@ -36,12 +36,13 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   let query = supabase
     .from("products")
-    .select(`id, name, slug, price, is_new, top10_rank, is_sold_out, hide_when_sold_out, product_images(image_url, is_thumbnail, sort_order)`)
+    .select(`id, name, slug, price, is_new, is_set, top10_rank, is_sold_out, hide_when_sold_out, product_images(image_url, is_thumbnail, sort_order)`)
     .eq("is_active", true)
     .or("is_sold_out.eq.false,hide_when_sold_out.eq.false");
 
   if (searchTerm) query = query.ilike("name", `%${searchTerm}%`);
-  query = query.eq("is_set", false);
+  // 세트상품도 전체상품 목록에 노출 (카테고리 지정이 없어도 보이도록)
+  // 카테고리 필터가 걸리면 category_id 일치하는 상품만 나오므로 세트상품은 자연스럽게 제외됨.
 
   if (category) {
     const { data: categoryRow } = await supabase.from("categories").select("id").eq("slug", category).maybeSingle();
@@ -158,6 +159,11 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                       <div className="absolute left-2 top-2 flex flex-col gap-1">
                         {product.top10_rank !== null && <span className="badge-top">TOP {product.top10_rank}</span>}
                         {product.is_new && <span className="badge-new">NEW</span>}
+                        {product.is_set && (
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-[#5332C9] px-2 py-0.5 text-[10px] font-bold text-white">
+                            🎁 세트
+                          </span>
+                        )}
                       </div>
                       {product.is_sold_out && (
                         <div className="absolute inset-0 flex items-center justify-center bg-white/60">
