@@ -41,8 +41,8 @@ export default async function CheckoutCompletePage({
             </h1>
             <p className="mt-2 text-sm text-[#6b7280]">
               아래 계좌로{" "}
-              <span className="font-semibold text-[#222222]">24시간 이내</span>
-              에 입금해 주시면 주문이 확정됩니다.
+              <span className="font-semibold text-[#222222]">3일 이내</span>에
+              입금해 주시면 주문이 확정됩니다.
             </p>
           </div>
 
@@ -96,7 +96,7 @@ export default async function CheckoutCompletePage({
             </p>
             {[
               "입금자명은 주문 시 입력하신 입금자명과 동일하게 입력해 주세요.",
-              "입금 기한은 주문 후 24시간이며, 기한 내 미입금 시 주문이 자동으로 취소됩니다.",
+              "입금 기한은 주문 후 3일 이며, 기한 내 미입금 시 주문이 자동으로 취소됩니다.",
               "입금 확인 후 배송이 준비되며, 배송까지 1~2주 정도 소요될 수 있습니다.",
               "입금자명 오기입 또는 분할 입금 시 처리가 지연될 수 있습니다.",
             ].map((notice) => (

@@ -12,7 +12,7 @@ import {
 } from "@/src/server/cancel-return";
 
 // 반품 왕복 배송비 (변경 시 이 값만 수정)
-const RETURN_SHIPPING_FEE = "왕복 10,000원";
+const RETURN_SHIPPING_FEE = "왕복배송비 발생";
 
 // ── 택배사 설정 ──────────────────────────────────────────────────────────
 const COURIERS: Record<string, { name: string; url: (n: string) => string }> = {
@@ -586,7 +586,7 @@ function ReturnInfoBanner({ status }: { status: StatusKey }) {
           어려우며, 상품 수령 후 반품을 신청해 주세요.
         </p>
         <p className="mt-1 font-semibold">
-          반품 배송비: {RETURN_SHIPPING_FEE} (단순 변심)
+          반품 배송비: {RETURN_SHIPPING_FEE} (단순 변심 등)
         </p>
       </div>
     );
@@ -608,7 +608,7 @@ function ReturnInfoBanner({ status }: { status: StatusKey }) {
           에 따라 미개봉·미사용 상품에 한해 반품이 가능합니다.
         </p>
         <p className="font-semibold">
-          반품 배송비: {RETURN_SHIPPING_FEE} (단순 변심)
+          반품 배송비: {RETURN_SHIPPING_FEE} (단순 변심 등)
         </p>
         <p className="text-red-700/70">
           제품의 사용 및 이상이 있을경우 <strong>반품이 제한</strong>될수
@@ -1311,8 +1311,13 @@ function OrderModal({
               {/* 환불 계좌 (입금 대기 시) */}
               {order.status === "pending" && (
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold text-[#6b7280]">
+                  <p className="text-xs font-semibold text-[#6b7280] ">
                     환불 계좌 정보 <span className="text-[#FF5555]">*</span>
+                    <strong className="text-[#FF5555]">
+                      {" "}
+                      오입력시 환불이 늦어지니 꼭 확인하여 입력
+                      부탁드립니다.{" "}
+                    </strong>
                   </p>
                   <div>
                     <label className="mb-1 block text-[11px] text-[#9ca3af]">
@@ -1337,9 +1342,23 @@ function OrderModal({
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       value={refundAccount}
-                      onChange={(e) => setRefundAccount(e.target.value)}
+                      onChange={(e) => {
+                        const onlyNumbers = e.target.value.replace(
+                          /[^0-9]/g,
+                          "",
+                        );
+                        setRefundAccount(onlyNumbers);
+                      }}
+                      onKeyDown={(e) => {
+                        if (["e", "E", "+", "-", "."].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      maxLength={20}
                       placeholder="- 없이 숫자만 입력"
+                      autoComplete="off"
                       className="w-full rounded-xl border border-[#E8E6E1] px-3 py-2.5 text-sm focus:border-[#5332C9] focus:outline-none focus:ring-2 focus:ring-[#5332C9]/15"
                     />
                   </div>
@@ -1534,11 +1553,11 @@ function OrderModal({
                   반품 배송비 안내
                 </p>
                 <p>
-                  단순 변심: <strong>{RETURN_SHIPPING_FEE}</strong> 고객 부담
+                  단순 변심 등: <strong>{RETURN_SHIPPING_FEE}</strong> 고객 부담
                 </p>
                 <p>
-                  상품 불량·오배송:{" "}
-                  <strong className="text-[#15803d]">무료</strong> (판매자 부담)
+                  상품 불량·오배송시 먼저 카카오 고객센터로 문의
+                  부탁드립니다.{" "}
                 </p>
               </div>
 

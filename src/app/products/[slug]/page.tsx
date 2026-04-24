@@ -68,9 +68,10 @@ export default async function ProductDetailPage({
   const isLoggedIn = !!authData.user;
   const isSoldOut = !!product.is_sold_out;
 
-  const allImages = product.product_images?.sort(
-    (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999),
-  ) ?? [];
+  const allImages =
+    product.product_images?.sort(
+      (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999),
+    ) ?? [];
   const galleryImages = allImages.filter((img) => img.image_type !== "detail");
 
   const [isWishlisted, optionGroups] = await Promise.all([
@@ -87,9 +88,16 @@ export default async function ProductDetailPage({
             className="flex items-center gap-2 text-xs text-[#9ca3af]"
             aria-label="경로"
           >
-            <Link href="/" className="hover:text-[#5332C9] transition-colors">홈</Link>
+            <Link href="/" className="hover:text-[#5332C9] transition-colors">
+              홈
+            </Link>
             <span>/</span>
-            <Link href="/products" className="hover:text-[#5332C9] transition-colors">상품목록</Link>
+            <Link
+              href="/products"
+              className="hover:text-[#5332C9] transition-colors"
+            >
+              상품목록
+            </Link>
             <span>/</span>
             <span className="text-[#222222] font-medium line-clamp-1 max-w-[200px]">
               {product.name}
@@ -166,30 +174,26 @@ export default async function ProductDetailPage({
               initialWishlisted={isWishlisted}
               isLoggedIn={isLoggedIn}
             />
-
-            <div className="rounded-2xl bg-[#FAF9F6] border border-[#E8E6E1] px-5 py-4 space-y-2">
-              {[
-                { icon: "🚚", text: "주문 확인 후 1~2주 정도 소요될수 있습니다" },
-                { icon: "💳", text: "무통장입금 — 입금자명과 주문자명을 동일하게 입력해 주세요" },
-                { icon: "🔒", text: "안전 인증 완료 제품" },
-              ].map((item) => (
-                <div key={item.text} className="flex items-start gap-2.5">
-                  <span className="text-base mt-0.5">{item.icon}</span>
-                  <span className="text-xs leading-5 text-[#6b7280]">{item.text}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
 
         {/* 상품 정보 탭 (상품정보 / 배송·반품 안내) */}
-        <ProductDetailTabs
-          description={product.description}
-        />
+        <ProductDetailTabs description={product.description} />
 
         <div className="mt-8">
           <Link href="/products" className="btn-ghost inline-flex gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <line x1="19" y1="12" x2="5" y2="12" />
               <polyline points="12 19 5 12 12 5" />
             </svg>
